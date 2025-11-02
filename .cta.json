@@ -1,0 +1,22 @@
+{
+  "projectName": "honai-puma-start",
+  "mode": "file-router",
+  "typescript": true,
+  "tailwind": true,
+  "packageManager": "bun",
+  "addOnOptions": {
+    "drizzle": {
+      "database": "mysql"
+    }
+  },
+  "git": true,
+  "version": 1,
+  "framework": "react-cra",
+  "chosenAddOns": [
+    "start",
+    "db",
+    "drizzle",
+    "shadcn",
+    "tanstack-query"
+  ]
+}
