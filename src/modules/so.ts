@@ -11,17 +11,12 @@ import { index, unionAll } from "drizzle-orm/mysql-core";
 
 const app = new Hono()
     .get('/target-so',
-        zValidator('query', z.object({ date: z.coerce.date().optional(), branch: z.string().optional(), subbranch: z.string().optional(), cluster: z.string().optional(), kabupaten: z.string().optional() })),
+        zValidator('query', z.object({ date: z.string().optional(), branch: z.string().optional(), subbranch: z.string().optional(), cluster: z.string().optional(), kabupaten: z.string().optional() })),
         async c => {
             const { date, branch, subbranch, cluster, kabupaten } = c.req.valid('query')
             const selectedDate = date ? new Date(date) : subDays(new Date(), 3)
 
-            const currMonth = format(selectedDate, 'MM')
             const currYear = format(selectedDate, 'yyyy')
-            const latestMonth = parseInt(format(selectedDate, 'M'), 10)
-            const isPrevMonthLastYear = currMonth === '01'
-            const prevMonth = isPrevMonthLastYear ? '12' : format(subMonths(selectedDate, 1), 'MM')
-            const prevMonthYear = isPrevMonthLastYear ? format(subYears(selectedDate, 1), 'yyyy') : format(selectedDate, 'yyyy')
             const prevYear = format(subYears(selectedDate, 1), 'yyyy')
 
             // VARIABLE TANGGAL
@@ -85,15 +80,15 @@ const app = new Hono()
             const revenueRegional = db
                 .select({
                     name: regionalSubquery.regional,
-                    target_so: sql<number>`ROUND(SUM(${regionalTargetRevenue.target_so}),2)`.as('target_so'),
-                    so: sql<number>`ROUND(SUM(${summaryRevRegional.trx_all_m}),2)`.as('so'),
-                    ach_target_fm_so: sql<string>`CONCAT(ROUND((SUM(${summaryRevRegional.trx_all_m})/SUM(${regionalTargetRevenue.target_so}))*100,2),'%')`.as('ach_target_fm_so'),
-                    drr_so: sql<string>`CONCAT(ROUND((SUM(${summaryRevRegional.trx_all_m})/(${today}/${daysInMonth}*(SUM(${regionalTargetRevenue.target_so}))))*100,2),'%')`.as('drr_so'),
-                    gap_to_target_so: sql<number>`ROUND((COALESCE(SUM(${summaryRevRegional.trx_all_m}) - SUM(${regionalTargetRevenue.target_so}),0)),2)`.as('gap_to_target_so'),
-                    mom_so: sql<string>`CONCAT(${summaryRevRegional.trx_total_mom}, '%')`.as('mom_so'),
-                    so_absolut: sql<number>`ROUND(SUM(${summaryRevRegional.trx_all_m} - ${summaryRevRegional.trx_all_m1}),2)`.as('so_absolut'),
-                    yoy_so: sql<string>`CONCAT(SUM(${summaryRevRegional.trx_all_m} - ${summaryRevRegional.trx_all_m12})/${summaryRevRegional.trx_all_m12}*100, '%')`.as('yoy_so'),
-                    ytd_so: sql<string>`CONCAT(SUM(${summaryRevRegional.trx_all_ytd} - ${summaryRevRegional.trx_all_ytd1})/${summaryRevRegional.trx_all_ytd1}*100, '%')`.as('ytd_so')
+                    targetAll: sql<number>`ROUND(SUM(${regionalTargetRevenue.target_so}),2)`.as('target_so'),
+                    revAll: sql<number>`ROUND(SUM(${summaryRevRegional.trx_all_m}),2)`.as('so'),
+                    achTargetFmAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevRegional.trx_all_m})/SUM(${regionalTargetRevenue.target_so}))*100,2),'%')`.as('ach_target_fm_so'),
+                    drrAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevRegional.trx_all_m})/(${today}/${daysInMonth}*(SUM(${regionalTargetRevenue.target_so}))))*100,2),'%')`.as('drr_so'),
+                    gapToTargetAll: sql<number>`ROUND((COALESCE(SUM(${summaryRevRegional.trx_all_m}) - SUM(${regionalTargetRevenue.target_so}),0)),2)`.as('gap_to_target_so'),
+                    momAll: sql<string>`CONCAT(${summaryRevRegional.trx_total_mom}, '%')`.as('mom_so'),
+                    revAllAbsolut: sql<number>`ROUND(SUM(${summaryRevRegional.trx_all_m} - ${summaryRevRegional.trx_all_m1}),2)`.as('so_absolut'),
+                    yoyAll: sql<string>`CONCAT(ROUND(SUM(${summaryRevRegional.trx_all_m} - ${summaryRevRegional.trx_all_m12})/${summaryRevRegional.trx_all_m12}*100, 2), '%')`.as('yoy_so'),
+                    ytdAll: sql<string>`CONCAT(ROUND(SUM(${summaryRevRegional.trx_all_ytd} - ${summaryRevRegional.trx_all_ytd1})/${summaryRevRegional.trx_all_ytd1}*100, 2), '%')`.as('ytd_so')
                 })
                 .from(regionalSubquery)
                 .leftJoin(summaryRevRegional, eq(regionalSubquery.regional, summaryRevRegional.regional))
@@ -103,15 +98,15 @@ const app = new Hono()
             const branchHeaderQuery = db
                 .selectDistinct({
                     name: sql<string | null>`'BRANCH'`,
-                    target_so: sql<number>`''`,
-                    so: sql<number>`''`,
-                    ach_target_fm_so: sql<string>`''`,
-                    drr_so: sql<string>`''`,
-                    gap_to_target_so: sql<number>`''`,
-                    mom_so: sql<string>`''`,
-                    so_absolut: sql<number>`''`,
-                    yoy_so: sql<string>`''`,
-                    ytd_so: sql<string>`''`,
+                    targetAll: sql<number>`''`,
+                    revAll: sql<number>`''`,
+                    achTargetFmAll: sql<string>`''`,
+                    drrAll: sql<string>`''`,
+                    gapToTargetAll: sql<number>`''`,
+                    momAll: sql<string>`''`,
+                    revAllAbsolut: sql<number>`''`,
+                    yoyAll: sql<string>`''`,
+                    ytdAll: sql<string>`''`,
                 })
                 .from(feiTargetPuma)
 
@@ -159,15 +154,15 @@ const app = new Hono()
             const revenueBranch = db
                 .select({
                     name: branchSubquery.branch,
-                    target_so: sql<number>`ROUND(SUM(${branchTargetRevenue.target_so}),2)`.as('target_so'),
-                    so: sql<number>`ROUND(SUM(${summaryRevBranch.trx_all_m}),2)`.as('so'),
-                    ach_target_fm_so: sql<string>`CONCAT(ROUND((SUM(${summaryRevBranch.trx_all_m})/SUM(${branchTargetRevenue.target_so}))*100,2),'%')`.as('ach_target_fm_so'),
-                    drr_so: sql<string>`CONCAT(ROUND((SUM(${summaryRevBranch.trx_all_m})/(${today}/${daysInMonth}*(SUM(${branchTargetRevenue.target_so}))))*100,2),'%')`.as('drr_so'),
-                    gap_to_target_so: sql<number>`ROUND((COALESCE(SUM(${summaryRevBranch.trx_all_m}) - SUM(${branchTargetRevenue.target_so}),0)),2)`.as('gap_to_target_so'),
-                    mom_so: sql<string>`CONCAT(${summaryRevBranch.trx_total_mom}, '%')`.as('mom_so'),
-                    so_absolut: sql<number>`ROUND(SUM(${summaryRevBranch.trx_all_m} - ${summaryRevBranch.trx_all_m1}),2)`.as('so_absolut'),
-                    yoy_so: sql<string>`CONCAT(SUM(${summaryRevBranch.trx_all_m} - ${summaryRevBranch.trx_all_m12})/${summaryRevBranch.trx_all_m12}*100, '%')`.as('yoy_so'),
-                    ytd_so: sql<string>`CONCAT(SUM(${summaryRevBranch.trx_all_ytd} - ${summaryRevBranch.trx_all_ytd1})/${summaryRevBranch.trx_all_ytd1}*100, '%')`.as('ytd_so')
+                    targetAll: sql<number>`ROUND(SUM(${branchTargetRevenue.target_so}),2)`.as('target_so'),
+                    revAll: sql<number>`ROUND(SUM(${summaryRevBranch.trx_all_m}),2)`.as('so'),
+                    achTargetFmAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevBranch.trx_all_m})/SUM(${branchTargetRevenue.target_so}))*100,2),'%')`.as('ach_target_fm_so'),
+                    drrAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevBranch.trx_all_m})/(${today}/${daysInMonth}*(SUM(${branchTargetRevenue.target_so}))))*100,2),'%')`.as('drr_so'),
+                    gapToTargetAll: sql<number>`ROUND((COALESCE(SUM(${summaryRevBranch.trx_all_m}) - SUM(${branchTargetRevenue.target_so}),0)),2)`.as('gap_to_target_so'),
+                    momAll: sql<string>`CONCAT(${summaryRevBranch.trx_total_mom}, '%')`.as('mom_so'),
+                    revAllAbsolut: sql<number>`ROUND(SUM(${summaryRevBranch.trx_all_m} - ${summaryRevBranch.trx_all_m1}),2)`.as('so_absolut'),
+                    yoyAll: sql<string>`CONCAT(ROUND(SUM(${summaryRevBranch.trx_all_m} - ${summaryRevBranch.trx_all_m12})/${summaryRevBranch.trx_all_m12}*100, 2), '%')`.as('yoy_so'),
+                    ytdAll: sql<string>`CONCAT(ROUND(SUM(${summaryRevBranch.trx_all_ytd} - ${summaryRevBranch.trx_all_ytd1})/${summaryRevBranch.trx_all_ytd1}*100, 2), '%')`.as('ytd_so')
                 })
                 .from(branchSubquery)
                 .leftJoin(summaryRevBranch, eq(branchSubquery.branch, summaryRevBranch.branch))
@@ -177,15 +172,15 @@ const app = new Hono()
             const subbranchHeaderQuery = db
                 .selectDistinct({
                     name: sql<string | null>`'SUBBRANCH'`,
-                    target_so: sql<number>`''`,
-                    so: sql<number>`''`,
-                    ach_target_fm_so: sql<string>`''`,
-                    drr_so: sql<string>`''`,
-                    gap_to_target_so: sql<number>`''`,
-                    mom_so: sql<string>`''`,
-                    so_absolut: sql<number>`''`,
-                    yoy_so: sql<string>`''`,
-                    ytd_so: sql<string>`''`,
+                    targetAll: sql<number>`''`,
+                    revAll: sql<number>`''`,
+                    achTargetFmAll: sql<string>`''`,
+                    drrAll: sql<string>`''`,
+                    gapToTargetAll: sql<number>`''`,
+                    momAll: sql<string>`''`,
+                    revAllAbsolut: sql<number>`''`,
+                    yoyAll: sql<string>`''`,
+                    ytdAll: sql<string>`''`,
                 })
                 .from(feiTargetPuma)
 
@@ -237,15 +232,15 @@ const app = new Hono()
             const revenueSubbranch = db
                 .select({
                     name: subbranchSubquery.subbranch,
-                    target_so: sql<number>`ROUND(SUM(${subbranchTargetRevenue.target_so}),2)`.as('target_so'),
-                    so: sql<number>`ROUND(SUM(${summaryRevSubbranch.trx_all_m}),2)`.as('so'),
-                    ach_target_fm_so: sql<string>`CONCAT(ROUND((SUM(${summaryRevSubbranch.trx_all_m})/SUM(${subbranchTargetRevenue.target_so}))*100,2),'%')`.as('ach_target_fm_so'),
-                    drr_so: sql<string>`CONCAT(ROUND((SUM(${summaryRevSubbranch.trx_all_m})/(${today}/${daysInMonth}*(SUM(${subbranchTargetRevenue.target_so}))))*100,2),'%')`.as('drr_so'),
-                    gap_to_target_so: sql<number>`ROUND((COALESCE(SUM(${summaryRevSubbranch.trx_all_m}) - SUM(${subbranchTargetRevenue.target_so}),0)),2)`.as('gap_to_target_so'),
-                    mom_so: sql<string>`CONCAT(${summaryRevSubbranch.trx_total_mom}, '%')`.as('mom_so'),
-                    so_absolut: sql<number>`ROUND(SUM(${summaryRevSubbranch.trx_all_m} - ${summaryRevSubbranch.trx_all_m1}),2)`.as('so_absolut'),
-                    yoy_so: sql<string>`CONCAT(SUM(${summaryRevSubbranch.trx_all_m} - ${summaryRevSubbranch.trx_all_m12})/${summaryRevSubbranch.trx_all_m12}*100, '%')`.as('yoy_so'),
-                    ytd_so: sql<string>`CONCAT(SUM(${summaryRevSubbranch.trx_all_ytd} - ${summaryRevSubbranch.trx_all_ytd1})/${summaryRevSubbranch.trx_all_ytd1}*100, '%')`.as('ytd_so')
+                    targetAll: sql<number>`ROUND(SUM(${subbranchTargetRevenue.target_so}),2)`.as('target_so'),
+                    revAll: sql<number>`ROUND(SUM(${summaryRevSubbranch.trx_all_m}),2)`.as('so'),
+                    achTargetFmAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevSubbranch.trx_all_m})/SUM(${subbranchTargetRevenue.target_so}))*100,2),'%')`.as('ach_target_fm_so'),
+                    drrAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevSubbranch.trx_all_m})/(${today}/${daysInMonth}*(SUM(${subbranchTargetRevenue.target_so}))))*100,2),'%')`.as('drr_so'),
+                    gapToTargetAll: sql<number>`ROUND((COALESCE(SUM(${summaryRevSubbranch.trx_all_m}) - SUM(${subbranchTargetRevenue.target_so}),0)),2)`.as('gap_to_target_so'),
+                    momAll: sql<string>`CONCAT(${summaryRevSubbranch.trx_total_mom}, '%')`.as('mom_so'),
+                    revAllAbsolut: sql<number>`ROUND(SUM(${summaryRevSubbranch.trx_all_m} - ${summaryRevSubbranch.trx_all_m1}),2)`.as('so_absolut'),
+                    yoyAll: sql<string>`CONCAT(ROUND(SUM(${summaryRevSubbranch.trx_all_m} - ${summaryRevSubbranch.trx_all_m12})/${summaryRevSubbranch.trx_all_m12}*100, 2), '%')`.as('yoy_so'),
+                    ytdAll: sql<string>`CONCAT(ROUND(SUM(${summaryRevSubbranch.trx_all_ytd} - ${summaryRevSubbranch.trx_all_ytd1})/${summaryRevSubbranch.trx_all_ytd1}*100, 2), '%')`.as('ytd_so')
                 })
                 .from(subbranchSubquery)
                 .leftJoin(summaryRevSubbranch, eq(subbranchSubquery.subbranch, summaryRevSubbranch.subbranch))
@@ -255,15 +250,15 @@ const app = new Hono()
             const clusterHeaderQuery = db
                 .selectDistinct({
                     name: sql<string | null>`'CLUSTER'`,
-                    target_so: sql<number>`''`,
-                    so: sql<number>`''`,
-                    ach_target_fm_so: sql<string>`''`,
-                    drr_so: sql<string>`''`,
-                    gap_to_target_so: sql<number>`''`,
-                    mom_so: sql<string>`''`,
-                    so_absolut: sql<number>`''`,
-                    yoy_so: sql<string>`''`,
-                    ytd_so: sql<string>`''`,
+                    targetAll: sql<number>`''`,
+                    revAll: sql<number>`''`,
+                    achTargetFmAll: sql<string>`''`,
+                    drrAll: sql<string>`''`,
+                    gapToTargetAll: sql<number>`''`,
+                    momAll: sql<string>`''`,
+                    revAllAbsolut: sql<number>`''`,
+                    yoyAll: sql<string>`''`,
+                    ytdAll: sql<string>`''`,
                 })
                 .from(feiTargetPuma)
 
@@ -320,15 +315,15 @@ const app = new Hono()
             const revenueCluster = db
                 .select({
                     name: clusterSubquery.cluster,
-                    target_so: sql<number>`ROUND(SUM(${clusterTargetRevenue.target_so}),2)`.as('target_so'),
-                    so: sql<number>`ROUND(SUM(${summaryRevCluster.trx_all_m}),2)`.as('so'),
-                    ach_target_fm_so: sql<string>`CONCAT(ROUND((SUM(${summaryRevCluster.trx_all_m})/SUM(${clusterTargetRevenue.target_so}))*100,2),'%')`.as('ach_target_fm_so'),
-                    drr_so: sql<string>`CONCAT(ROUND((SUM(${summaryRevCluster.trx_all_m})/(${today}/${daysInMonth}*(SUM(${clusterTargetRevenue.target_so}))))*100,2),'%')`.as('drr_so'),
-                    gap_to_target_so: sql<number>`ROUND((COALESCE(SUM(${summaryRevCluster.trx_all_m}) - SUM(${clusterTargetRevenue.target_so}),0)),2)`.as('gap_to_target_so'),
-                    mom_so: sql<string>`CONCAT(${summaryRevCluster.trx_total_mom}, '%')`.as('mom_so'),
-                    so_absolut: sql<number>`ROUND(SUM(${summaryRevCluster.trx_all_m} - ${summaryRevCluster.trx_all_m1}),2)`.as('so_absolut'),
-                    yoy_so: sql<string>`CONCAT(SUM(${summaryRevCluster.trx_all_m} - ${summaryRevCluster.trx_all_m12})/${summaryRevCluster.trx_all_m12}*100, '%')`.as('yoy_so'),
-                    ytd_so: sql<string>`CONCAT(SUM(${summaryRevCluster.trx_all_ytd} - ${summaryRevCluster.trx_all_ytd1})/${summaryRevCluster.trx_all_ytd1}*100, '%')`.as('ytd_so')
+                    targetAll: sql<number>`ROUND(SUM(${clusterTargetRevenue.target_so}),2)`.as('target_so'),
+                    revAll: sql<number>`ROUND(SUM(${summaryRevCluster.trx_all_m}),2)`.as('so'),
+                    achTargetFmAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevCluster.trx_all_m})/SUM(${clusterTargetRevenue.target_so}))*100,2),'%')`.as('ach_target_fm_so'),
+                    drrAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevCluster.trx_all_m})/(${today}/${daysInMonth}*(SUM(${clusterTargetRevenue.target_so}))))*100,2),'%')`.as('drr_so'),
+                    gapToTargetAll: sql<number>`ROUND((COALESCE(SUM(${summaryRevCluster.trx_all_m}) - SUM(${clusterTargetRevenue.target_so}),0)),2)`.as('gap_to_target_so'),
+                    momAll: sql<string>`CONCAT(${summaryRevCluster.trx_total_mom}, '%')`.as('mom_so'),
+                    revAllAbsolut: sql<number>`ROUND(SUM(${summaryRevCluster.trx_all_m} - ${summaryRevCluster.trx_all_m1}),2)`.as('so_absolut'),
+                    yoyAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevCluster.trx_all_m} - ${summaryRevCluster.trx_all_m12})/${summaryRevCluster.trx_all_m12}*100), 2), '%')`.as('yoy_so'),
+                    ytdAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevCluster.trx_all_ytd} - ${summaryRevCluster.trx_all_ytd1})/${summaryRevCluster.trx_all_ytd1}*100), 2), '%')`.as('ytd_so')
                 })
                 .from(clusterSubquery)
                 .leftJoin(summaryRevCluster, eq(clusterSubquery.cluster, summaryRevCluster.cluster))
@@ -338,15 +333,15 @@ const app = new Hono()
             const kabupatenHeaderQuery = db
                 .selectDistinct({
                     name: sql<string | null>`'KABUPATEN'`,
-                    target_so: sql<number>`''`,
-                    so: sql<number>`''`,
-                    ach_target_fm_so: sql<string>`''`,
-                    drr_so: sql<string>`''`,
-                    gap_to_target_so: sql<number>`''`,
-                    mom_so: sql<string>`''`,
-                    so_absolut: sql<number>`''`,
-                    yoy_so: sql<string>`''`,
-                    ytd_so: sql<string>`''`,
+                    targetAll: sql<number>`''`,
+                    revAll: sql<number>`''`,
+                    achTargetFmAll: sql<string>`''`,
+                    drrAll: sql<string>`''`,
+                    gapToTargetAll: sql<number>`''`,
+                    momAll: sql<string>`''`,
+                    revAllAbsolut: sql<number>`''`,
+                    yoyAll: sql<string>`''`,
+                    ytdAll: sql<string>`''`,
                 })
                 .from(feiTargetPuma)
 
@@ -409,15 +404,15 @@ const app = new Hono()
             const revenueKabupaten = db
                 .select({
                     name: kabupatenSubquery.kabupaten,
-                    target_so: sql<number>`ROUND(SUM(${kabupatenTargetRevenue.target_so}),2)`.as('target_so'),
-                    so: sql<number>`ROUND(SUM(${summaryRevKabupaten.trx_all_m}),2)`.as('so'),
-                    ach_target_fm_so: sql<string>`CONCAT(ROUND((SUM(${summaryRevKabupaten.trx_all_m})/SUM(${kabupatenTargetRevenue.target_so}))*100,2),'%')`.as('ach_target_fm_so'),
-                    drr_so: sql<string>`CONCAT(ROUND((SUM(${summaryRevKabupaten.trx_all_m})/(${today}/${daysInMonth}*(SUM(${kabupatenTargetRevenue.target_so}))))*100,2),'%')`.as('drr_so'),
-                    gap_to_target_so: sql<number>`ROUND((COALESCE(SUM(${summaryRevKabupaten.trx_all_m}) - SUM(${kabupatenTargetRevenue.target_so}),0)),2)`.as('gap_to_target_so'),
-                    mom_so: sql<string>`CONCAT(${summaryRevKabupaten.trx_total_mom}, '%')`.as('mom_so'),
-                    so_absolut: sql<number>`ROUND(SUM(${summaryRevKabupaten.trx_all_m} - ${summaryRevKabupaten.trx_all_m1}),2)`.as('so_absolut'),
-                    yoy_so: sql<string>`CONCAT(SUM(${summaryRevKabupaten.trx_all_m} - ${summaryRevKabupaten.trx_all_m12})/${summaryRevKabupaten.trx_all_m12}*100, '%')`.as('yoy_so'),
-                    ytd_so: sql<string>`CONCAT(SUM(${summaryRevKabupaten.trx_all_ytd} - ${summaryRevKabupaten.trx_all_ytd1})/${summaryRevKabupaten.trx_all_ytd1}*100, '%')`.as('ytd_so')
+                    targetAll: sql<number>`ROUND(SUM(${kabupatenTargetRevenue.target_so}),2)`.as('target_so'),
+                    revAll: sql<number>`ROUND(SUM(${summaryRevKabupaten.trx_all_m}),2)`.as('so'),
+                    achTargetFmAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevKabupaten.trx_all_m})/SUM(${kabupatenTargetRevenue.target_so}))*100,2),'%')`.as('ach_target_fm_so'),
+                    drrAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevKabupaten.trx_all_m})/(${today}/${daysInMonth}*(SUM(${kabupatenTargetRevenue.target_so}))))*100,2),'%')`.as('drr_so'),
+                    gapToTargetAll: sql<number>`ROUND((COALESCE(SUM(${summaryRevKabupaten.trx_all_m}) - SUM(${kabupatenTargetRevenue.target_so}),0)),2)`.as('gap_to_target_so'),
+                    momAll: sql<string>`CONCAT(${summaryRevKabupaten.trx_total_mom}, '%')`.as('mom_so'),
+                    revAllAbsolut: sql<number>`ROUND(SUM(${summaryRevKabupaten.trx_all_m} - ${summaryRevKabupaten.trx_all_m1}),2)`.as('so_absolut'),
+                    yoyAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevKabupaten.trx_all_m} - ${summaryRevKabupaten.trx_all_m12})/${summaryRevKabupaten.trx_all_m12}*100), 2), '%')`.as('yoy_so'),
+                    ytdAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevKabupaten.trx_all_ytd} - ${summaryRevKabupaten.trx_all_ytd1})/${summaryRevKabupaten.trx_all_ytd1}*100), 2), '%')`.as('ytd_so')
                 })
                 .from(kabupatenSubquery)
                 .leftJoin(summaryRevKabupaten, eq(kabupatenSubquery.kabupaten, summaryRevKabupaten.kabupaten))
@@ -428,7 +423,7 @@ const app = new Hono()
                 unionAll(revenueRegional, branchHeaderQuery, revenueBranch, subbranchHeaderQuery, revenueSubbranch, clusterHeaderQuery, revenueCluster, kabupatenHeaderQuery, revenueKabupaten)
             ])
 
-            return c.json({ data: finalDataRevenue }, 200)
+            return c.json(finalDataRevenue, 200)
         })
 
 export default app

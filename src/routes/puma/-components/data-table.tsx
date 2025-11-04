@@ -188,4 +188,5 @@ type Revenue = {
     revAllAbsolut: number;
     yoyAll: string;
     ytdAll: string;
+    qoqAll?: string;
 }

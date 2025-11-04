@@ -31,6 +31,7 @@ const convertToCSV = (data: any[]) => {
 }
 
 const campaignQuerySchema = z.object({
+    date: z.string().optional(),
     branch: z.string().optional(),
     cluster: z.string().optional(),
     kabupaten: z.string().optional(),
@@ -41,9 +42,10 @@ const campaignQuerySchema = z.object({
 })
 
 const buildWLCampaignQuery = (params: z.infer<typeof campaignQuerySchema>) => {
-    const currentTime = subDays(new Date(), 2)
+    const { date, branch, method, product_offer, cluster, kabupaten, kecamatan, rows } = params
+
+    const currentTime = date ? new Date(date) : subDays(new Date(), 2)
     const period = format(currentTime, 'yyyyMM')
-    const { branch, method, product_offer, cluster, kabupaten, kecamatan, rows } = params
 
     const multidim = dynamicMultidim(period)
     const wlWaBlast = dynamicWLWABLASTBroadband(period)

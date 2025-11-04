@@ -12,7 +12,7 @@ export function formatToBillion(val: number) {
   }
 
   return Number(val).toLocaleString('id-ID', {
-    maximumFractionDigits: 0,
+    maximumFractionDigits: 2,
     minimumFractionDigits: 0,
   })
 }

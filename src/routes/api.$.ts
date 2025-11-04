@@ -4,8 +4,9 @@ import { createFileRoute } from '@tanstack/react-router'
 export const Route = createFileRoute('/api/$')({
     server: {
         handlers: {
-            GET: ({ request }) => app.fetch(request),
-            POST: ({ request }) => app.fetch(request),
+            GET: async ({ request }) => app.fetch(request),
+            POST: async ({ request }) => app.fetch(request),
+            OPTIONS: async ({ request }) => app.fetch(request),
         }
     }
 })

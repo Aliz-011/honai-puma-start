@@ -11,10 +11,10 @@ import { territoryArea4 } from "@/db/schema/puma_2025";
 
 
 const app = new Hono()
-    .get('/revenue-redeem-pv', zValidator('query', z.object({ date: z.coerce.date().optional() })),
+    .get('/revenue-redeem-pv', zValidator('query', z.object({ date: z.string().optional(), branch: z.string().optional(), subbranch: z.string().optional(), cluster: z.string().optional(), kabupaten: z.string().optional() })),
         async c => {
-            const { date } = c.req.valid('query')
-            const selectedDate = date ? new Date(date) : subDays(new Date(), 2)
+            const { date, branch, subbranch, cluster, kabupaten } = c.req.valid('query')
+            const selectedDate = date ? new Date(date) : subDays(new Date(), 3)
 
             const currDate = format(selectedDate, 'yyyy-MM-dd')
             const currDateYYMM = format(selectedDate, 'yyyyMM')
@@ -61,16 +61,16 @@ const app = new Hono()
             const revenueRegional = db
                 .select({
                     name: regionalSubquery.regional,
-                    target_redeem_pv: sql<number>`ROUND(SUM(${regionalTargetRevenue.target_redeem_pv} / 1000000000), 2)`.as('target_redeem_pv'),
-                    rev_cvm: sql<number>`ROUND(SUM(${summaryRevRegional.Rev_Voucher_Fisik}), 2)`.as('rev_cvm'),
-                    ach_target_fm_redeem_pv: sql<string>`CONCAT(ROUND((SUM(${summaryRevRegional.Rev_Voucher_Fisik}) / SUM(${regionalTargetRevenue.target_redeem_pv} / 1000000000)) * 100, 2), '%')`.as('ach_target_fm_redeem_pv'),
-                    drr_redeem_pv: sql<string>`CONCAT(ROUND((SUM(${summaryRevRegional.Rev_Voucher_Fisik}) / (${today} / ${daysInMonth} * SUM(${regionalTargetRevenue.target_redeem_pv} / 1000000000))) * 100, 2), '%')`.as('drr_redeem_pv'),
-                    gap_to_target_redeem_pv: sql<number>`ROUND((COALESCE(SUM(${summaryRevRegional.Rev_Voucher_Fisik}) - SUM(${regionalTargetRevenue.target_redeem_pv} / 1000000000), 0)), 2)`.as('gap_to_target_redeem_pv'),
-                    mom_cvm: sql<string>`CONCAT(${summaryRevRegional.MoM_Voucher_Fisik}, '%')`.as('mom_cvm'),
-                    rev_cvm_absolut: sql<number>`ROUND(SUM(${summaryRevRegional.Abs_Voucher_Fisik}), 2)`.as('rev_cvm_absolut'),
-                    yoy_cvm: sql<string>`CONCAT(${summaryRevRegional.YoY_Voucher_Fisik}, '%')`.as('yoy_cvm'),
-                    ytd_cvm: sql<string>`CONCAT(${summaryRevRegional.YTD_Voucher_Fisik}, '%')`.as('ytd_cvm'),
-                    qoq_cvm: sql<string>`CONCAT(${summaryRevRegional.QoQ_Voucher_Fisik}, '%')`.as('qoq_cvm'),
+                    targetAll: sql<number>`ROUND(SUM(${regionalTargetRevenue.target_redeem_pv} / 1000000000), 2)`.as('target_redeem_pv'),
+                    revAll: sql<number>`ROUND(SUM(${summaryRevRegional.Rev_Voucher_Fisik}), 2)`.as('rev_cvm'),
+                    achTargetFmAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevRegional.Rev_Voucher_Fisik}) / SUM(${regionalTargetRevenue.target_redeem_pv} / 1000000000)) * 100, 2), '%')`.as('ach_target_fm_redeem_pv'),
+                    drrAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevRegional.Rev_Voucher_Fisik}) / (${today} / ${daysInMonth} * SUM(${regionalTargetRevenue.target_redeem_pv} / 1000000000))) * 100, 2), '%')`.as('drr_redeem_pv'),
+                    gapToTargetAll: sql<number>`ROUND((COALESCE(SUM(${summaryRevRegional.Rev_Voucher_Fisik}) - SUM(${regionalTargetRevenue.target_redeem_pv} / 1000000000), 0)), 2)`.as('gap_to_target_redeem_pv'),
+                    momAll: sql<string>`CONCAT(${summaryRevRegional.MoM_Voucher_Fisik}, '%')`.as('mom_cvm'),
+                    revAllAbsolut: sql<number>`ROUND(SUM(${summaryRevRegional.Abs_Voucher_Fisik}), 2)`.as('rev_cvm_absolut'),
+                    yoyAll: sql<string>`CONCAT(${summaryRevRegional.YoY_Voucher_Fisik}, '%')`.as('yoy_cvm'),
+                    ytdAll: sql<string>`CONCAT(${summaryRevRegional.YTD_Voucher_Fisik}, '%')`.as('ytd_cvm'),
+                    qoqAll: sql<string>`CONCAT(${summaryRevRegional.QoQ_Voucher_Fisik}, '%')`.as('qoq_cvm'),
                 })
                 .from(regionalSubquery)
                 .leftJoin(summaryRevRegional, eq(regionalSubquery.regional, summaryRevRegional.regional))
@@ -80,23 +80,26 @@ const app = new Hono()
             const branchHeaderQuery = db
                 .selectDistinct({
                     name: sql<string | null>`'BRANCH'`,
-                    target_redeem_pv: sql<number>`''`,
-                    rev_cvm: sql<number>`''`,
-                    ach_target_fm_redeem_pv: sql<string>`''`,
-                    drr_redeem_pv: sql<string>`''`,
-                    gap_to_target_redeem_pv: sql<number>`''`,
-                    mom_cvm: sql<string>`''`,
-                    rev_cvm_absolut: sql<number>`''`,
-                    yoy_cvm: sql<string>`''`,
-                    ytd_cvm: sql<string>`''`,
-                    qoq_cvm: sql<string>`''`
+                    targetAll: sql<number>`''`,
+                    revAll: sql<number>`''`,
+                    achTargetFmAll: sql<string>`''`,
+                    drrAll: sql<string>`''`,
+                    gapToTargetAll: sql<number>`''`,
+                    momAll: sql<string>`''`,
+                    revAllAbsolut: sql<number>`''`,
+                    yoyAll: sql<string>`''`,
+                    ytdAll: sql<string>`''`,
+                    qoqAll: sql<string>`''`
                 })
                 .from(feiTargetPuma)
 
             const branchSubquery = db
                 .select({ branch: territoryArea4.branch })
                 .from(territoryArea4)
-                .where(eq(territoryArea4.regional, 'PUMA'))
+                .where(and(
+                    eq(territoryArea4.regional, 'PUMA'),
+                    branch ? eq(territoryArea4.branch, branch) : undefined
+                ))
                 .groupBy(territoryArea4.branch)
                 .as('a')
 
@@ -133,16 +136,16 @@ const app = new Hono()
             const revenueBranch = db
                 .select({
                     name: branchSubquery.branch,
-                    target_redeem_pv: sql<number>`ROUND(SUM(${branchTargetRevenue.target_redeem_pv}/1000000000), 2)`.as('target_redeem_pv'),
-                    rev_cvm: sql<number>`ROUND(SUM(${summaryRevBranch.Rev_Voucher_Fisik}), 2)`.as('rev_cvm'),
-                    ach_target_fm_redeem_pv: sql<string>`CONCAT(ROUND((SUM(${summaryRevBranch.Rev_Voucher_Fisik})/SUM(${branchTargetRevenue.target_redeem_pv}/1000000000))*100, 2), '%')`.as('ach_target_fm_redeem_pv'),
-                    drr_redeem_pv: sql<string>`CONCAT(ROUND((SUM(${summaryRevBranch.Rev_Voucher_Fisik})/(${today}/${daysInMonth}*SUM(${branchTargetRevenue.target_redeem_pv}/1000000000)))*100, 2), '%')`.as('drr_redeem_pv'),
-                    gap_to_target_redeem_pv: sql<number>`ROUND((COALESCE(SUM(${summaryRevBranch.Rev_Voucher_Fisik}) - SUM(${branchTargetRevenue.target_redeem_pv}/1000000000), 0)), 2)`.as('gap_to_target_redeem_pv'),
-                    mom_cvm: sql<string>`CONCAT(${summaryRevBranch.MoM_Voucher_Fisik}, '%')`.as('mom_cvm'),
-                    rev_cvm_absolut: sql<number>`ROUND(SUM(${summaryRevBranch.Abs_Voucher_Fisik}), 2)`.as('rev_cvm_absolut'),
-                    yoy_cvm: sql<string>`CONCAT(${summaryRevBranch.YoY_Voucher_Fisik}, '%')`.as('yoy_cvm'),
-                    ytd_cvm: sql<string>`CONCAT(${summaryRevBranch.YTD_Voucher_Fisik}, '%')`.as('ytd_cvm'),
-                    qoq_cvm: sql<string>`CONCAT(${summaryRevBranch.QoQ_Voucher_Fisik}, '%')`.as('qoq_cvm'),
+                    targetAll: sql<number>`ROUND(SUM(${branchTargetRevenue.target_redeem_pv}/1000000000), 2)`.as('target_redeem_pv'),
+                    revAll: sql<number>`ROUND(SUM(${summaryRevBranch.Rev_Voucher_Fisik}), 2)`.as('rev_cvm'),
+                    achTargetFmAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevBranch.Rev_Voucher_Fisik})/SUM(${branchTargetRevenue.target_redeem_pv}/1000000000))*100, 2), '%')`.as('ach_target_fm_redeem_pv'),
+                    drrAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevBranch.Rev_Voucher_Fisik})/(${today}/${daysInMonth}*SUM(${branchTargetRevenue.target_redeem_pv}/1000000000)))*100, 2), '%')`.as('drr_redeem_pv'),
+                    gapToTargetAll: sql<number>`ROUND((COALESCE(SUM(${summaryRevBranch.Rev_Voucher_Fisik}) - SUM(${branchTargetRevenue.target_redeem_pv}/1000000000), 0)), 2)`.as('gap_to_target_redeem_pv'),
+                    momAll: sql<string>`CONCAT(${summaryRevBranch.MoM_Voucher_Fisik}, '%')`.as('mom_cvm'),
+                    revAllAbsolut: sql<number>`ROUND(SUM(${summaryRevBranch.Abs_Voucher_Fisik}), 2)`.as('rev_cvm_absolut'),
+                    yoyAll: sql<string>`CONCAT(${summaryRevBranch.YoY_Voucher_Fisik}, '%')`.as('yoy_cvm'),
+                    ytdAll: sql<string>`CONCAT(${summaryRevBranch.YTD_Voucher_Fisik}, '%')`.as('ytd_cvm'),
+                    qoqAll: sql<string>`CONCAT(${summaryRevBranch.QoQ_Voucher_Fisik}, '%')`.as('qoq_cvm'),
                 })
                 .from(branchSubquery)
                 .leftJoin(summaryRevBranch, eq(branchSubquery.branch, summaryRevBranch.branch))
@@ -152,23 +155,30 @@ const app = new Hono()
             const subbranchHeaderQuery = db
                 .selectDistinct({
                     name: sql<string | null>`'SUBBRANCH'`,
-                    target_redeem_pv: sql<number>`''`,
-                    rev_cvm: sql<number>`''`,
-                    ach_target_fm_redeem_pv: sql<string>`''`,
-                    drr_redeem_pv: sql<string>`''`,
-                    gap_to_target_redeem_pv: sql<number>`''`,
-                    mom_cvm: sql<string>`''`,
-                    rev_cvm_absolut: sql<number>`''`,
-                    yoy_cvm: sql<string>`''`,
-                    ytd_cvm: sql<string>`''`,
-                    qoq_cvm: sql<string>`''`
+                    targetAll: sql<number>`''`,
+                    revAll: sql<number>`''`,
+                    achTargetFmAll: sql<string>`''`,
+                    drrAll: sql<string>`''`,
+                    gapToTargetAll: sql<number>`''`,
+                    momAll: sql<string>`''`,
+                    revAllAbsolut: sql<number>`''`,
+                    yoyAll: sql<string>`''`,
+                    ytdAll: sql<string>`''`,
+                    qoqAll: sql<string>`''`
                 })
                 .from(feiTargetPuma)
 
             const subbranchSubquery = db
                 .select({ subbranch: territoryArea4.subbranch })
                 .from(territoryArea4)
-                .where(eq(territoryArea4.regional, 'PUMA'))
+                .where(branch && subbranch ? and(
+                    eq(territoryArea4.regional, 'PUMA'),
+                    eq(territoryArea4.branch, branch),
+                    eq(territoryArea4.subbranch, subbranch)
+                ) : branch ? and(
+                    eq(territoryArea4.regional, 'PUMA'),
+                    eq(territoryArea4.branch, branch)
+                ) : eq(territoryArea4.regional, 'PUMA'))
                 .groupBy(territoryArea4.subbranch)
                 .as('a')
 
@@ -205,16 +215,16 @@ const app = new Hono()
             const revenueSubbranch = db
                 .select({
                     name: subbranchSubquery.subbranch,
-                    target_redeem_pv: sql<number>`ROUND(SUM(${subbranchTargetRevenue.target_redeem_pv}/1000000000), 2)`.as('target_redeem_pv'),
-                    rev_cvm: sql<number>`ROUND(SUM(${summaryRevSubbranch.Rev_Voucher_Fisik}), 2)`.as('rev_cvm'),
-                    ach_target_fm_redeem_pv: sql<string>`CONCAT(ROUND((SUM(${summaryRevSubbranch.Rev_Voucher_Fisik})/SUM(${subbranchTargetRevenue.target_redeem_pv}/1000000000))*100, 2), '%')`.as('ach_target_fm_redeem_pv'),
-                    drr_redeem_pv: sql<string>`CONCAT(ROUND((SUM(${summaryRevSubbranch.Rev_Voucher_Fisik})/(${today}/${daysInMonth}*SUM(${subbranchTargetRevenue.target_redeem_pv}/1000000000)))*100, 2), '%')`.as('drr_redeem_pv'),
-                    gap_to_target_redeem_pv: sql<number>`ROUND((COALESCE(SUM(${summaryRevSubbranch.Rev_Voucher_Fisik}) - SUM(${subbranchTargetRevenue.target_redeem_pv}/1000000000), 0)), 2)`.as('gap_to_target_redeem_pv'),
-                    mom_cvm: sql<string>`CONCAT(${summaryRevSubbranch.MoM_Voucher_Fisik}, '%')`.as('mom_cvm'),
-                    rev_cvm_absolut: sql<number>`ROUND(SUM(${summaryRevSubbranch.Abs_Voucher_Fisik}), 2)`.as('rev_cvm_absolut'),
-                    yoy_cvm: sql<string>`CONCAT(${summaryRevSubbranch.YoY_Voucher_Fisik}, '%')`.as('yoy_cvm'),
-                    ytd_cvm: sql<string>`CONCAT(${summaryRevSubbranch.YTD_Voucher_Fisik}, '%')`.as('ytd_cvm'),
-                    qoq_cvm: sql<string>`CONCAT(${summaryRevSubbranch.QoQ_Voucher_Fisik}, '%')`.as('qoq_cvm'),
+                    targetAll: sql<number>`ROUND(SUM(${subbranchTargetRevenue.target_redeem_pv}/1000000000), 2)`.as('target_redeem_pv'),
+                    revAll: sql<number>`ROUND(SUM(${summaryRevSubbranch.Rev_Voucher_Fisik}), 2)`.as('rev_cvm'),
+                    achTargetFmAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevSubbranch.Rev_Voucher_Fisik})/SUM(${subbranchTargetRevenue.target_redeem_pv}/1000000000))*100, 2), '%')`.as('ach_target_fm_redeem_pv'),
+                    drrAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevSubbranch.Rev_Voucher_Fisik})/(${today}/${daysInMonth}*SUM(${subbranchTargetRevenue.target_redeem_pv}/1000000000)))*100, 2), '%')`.as('drr_redeem_pv'),
+                    gapToTargetAll: sql<number>`ROUND((COALESCE(SUM(${summaryRevSubbranch.Rev_Voucher_Fisik}) - SUM(${subbranchTargetRevenue.target_redeem_pv}/1000000000), 0)), 2)`.as('gap_to_target_redeem_pv'),
+                    momAll: sql<string>`CONCAT(${summaryRevSubbranch.MoM_Voucher_Fisik}, '%')`.as('mom_cvm'),
+                    revAllAbsolut: sql<number>`ROUND(SUM(${summaryRevSubbranch.Abs_Voucher_Fisik}), 2)`.as('rev_cvm_absolut'),
+                    yoyAll: sql<string>`CONCAT(${summaryRevSubbranch.YoY_Voucher_Fisik}, '%')`.as('yoy_cvm'),
+                    ytdAll: sql<string>`CONCAT(${summaryRevSubbranch.YTD_Voucher_Fisik}, '%')`.as('ytd_cvm'),
+                    qoqAll: sql<string>`CONCAT(${summaryRevSubbranch.QoQ_Voucher_Fisik}, '%')`.as('qoq_cvm'),
                 })
                 .from(subbranchSubquery)
                 .leftJoin(summaryRevSubbranch, eq(subbranchSubquery.subbranch, summaryRevSubbranch.subbranch))
@@ -224,23 +234,35 @@ const app = new Hono()
             const clusterHeaderQuery = db
                 .selectDistinct({
                     name: sql<string | null>`'CLUSTER'`,
-                    target_redeem_pv: sql<number>`''`,
-                    rev_cvm: sql<number>`''`,
-                    ach_target_fm_redeem_pv: sql<string>`''`,
-                    drr_redeem_pv: sql<string>`''`,
-                    gap_to_target_redeem_pv: sql<number>`''`,
-                    mom_cvm: sql<string>`''`,
-                    rev_cvm_absolut: sql<number>`''`,
-                    yoy_cvm: sql<string>`''`,
-                    ytd_cvm: sql<string>`''`,
-                    qoq_cvm: sql<string>`''`
+                    targetAll: sql<number>`''`,
+                    revAll: sql<number>`''`,
+                    achTargetFmAll: sql<string>`''`,
+                    drrAll: sql<string>`''`,
+                    gapToTargetAll: sql<number>`''`,
+                    momAll: sql<string>`''`,
+                    revAllAbsolut: sql<number>`''`,
+                    yoyAll: sql<string>`''`,
+                    ytdAll: sql<string>`''`,
+                    qoqAll: sql<string>`''`
                 })
                 .from(feiTargetPuma)
 
             const clusterSubquery = db
                 .select({ cluster: territoryArea4.cluster })
                 .from(territoryArea4)
-                .where(eq(territoryArea4.regional, 'PUMA'))
+                .where(branch && subbranch && cluster ? and(
+                    eq(territoryArea4.regional, 'PUMA'),
+                    eq(territoryArea4.branch, branch),
+                    eq(territoryArea4.subbranch, subbranch),
+                    eq(territoryArea4.cluster, cluster),
+                ) : branch && subbranch ? and(
+                    eq(territoryArea4.regional, 'PUMA'),
+                    eq(territoryArea4.branch, branch),
+                    eq(territoryArea4.subbranch, subbranch),
+                ) : branch ? and(
+                    eq(territoryArea4.regional, 'PUMA'),
+                    eq(territoryArea4.branch, branch),
+                ) : eq(territoryArea4.regional, 'PUMA'))
                 .groupBy(territoryArea4.cluster)
                 .as('a')
 
@@ -277,16 +299,16 @@ const app = new Hono()
             const revenueCluster = db
                 .select({
                     name: clusterSubquery.cluster,
-                    target_redeem_pv: sql<number>`ROUND(SUM(${clusterTargetRevenue.target_redeem_pv}/1000000000), 2)`.as('target_redeem_pv'),
-                    rev_cvm: sql<number>`ROUND(SUM(${summaryRevCluster.Rev_Voucher_Fisik}), 2)`.as('rev_cvm'),
-                    ach_target_fm_redeem_pv: sql<string>`CONCAT(ROUND((SUM(${summaryRevCluster.Rev_Voucher_Fisik})/SUM(${clusterTargetRevenue.target_redeem_pv}/1000000000))*100, 2), '%')`.as('ach_target_fm_redeem_pv'),
-                    drr_redeem_pv: sql<string>`CONCAT(ROUND((SUM(${summaryRevCluster.Rev_Voucher_Fisik})/(${today}/${daysInMonth}*SUM(${clusterTargetRevenue.target_redeem_pv}/1000000000)))*100, 2), '%')`.as('drr_redeem_pv'),
-                    gap_to_target_redeem_pv: sql<number>`ROUND((COALESCE(SUM(${summaryRevCluster.Rev_Voucher_Fisik}) - SUM(${clusterTargetRevenue.target_redeem_pv}/1000000000), 0)), 2)`.as('gap_to_target_redeem_pv'),
-                    mom_cvm: sql<string>`CONCAT(${summaryRevCluster.MoM_Voucher_Fisik}, '%')`.as('mom_cvm'),
-                    rev_cvm_absolut: sql<number>`ROUND(SUM(${summaryRevCluster.Abs_Voucher_Fisik}), 2)`.as('rev_cvm_absolut'),
-                    yoy_cvm: sql<string>`CONCAT(${summaryRevCluster.YoY_Voucher_Fisik}, '%')`.as('yoy_cvm'),
-                    ytd_cvm: sql<string>`CONCAT(${summaryRevCluster.YTD_Voucher_Fisik}, '%')`.as('ytd_cvm'),
-                    qoq_cvm: sql<string>`CONCAT(${summaryRevCluster.QoQ_Voucher_Fisik}, '%')`.as('qoq_cvm'),
+                    targetAll: sql<number>`ROUND(SUM(${clusterTargetRevenue.target_redeem_pv}/1000000000), 2)`.as('target_redeem_pv'),
+                    revAll: sql<number>`ROUND(SUM(${summaryRevCluster.Rev_Voucher_Fisik}), 2)`.as('rev_cvm'),
+                    achTargetFmAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevCluster.Rev_Voucher_Fisik})/SUM(${clusterTargetRevenue.target_redeem_pv}/1000000000))*100, 2), '%')`.as('ach_target_fm_redeem_pv'),
+                    drrAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevCluster.Rev_Voucher_Fisik})/(${today}/${daysInMonth}*SUM(${clusterTargetRevenue.target_redeem_pv}/1000000000)))*100, 2), '%')`.as('drr_redeem_pv'),
+                    gapToTargetAll: sql<number>`ROUND((COALESCE(SUM(${summaryRevCluster.Rev_Voucher_Fisik}) - SUM(${clusterTargetRevenue.target_redeem_pv}/1000000000), 0)), 2)`.as('gap_to_target_redeem_pv'),
+                    momAll: sql<string>`CONCAT(${summaryRevCluster.MoM_Voucher_Fisik}, '%')`.as('mom_cvm'),
+                    revAllAbsolut: sql<number>`ROUND(SUM(${summaryRevCluster.Abs_Voucher_Fisik}), 2)`.as('rev_cvm_absolut'),
+                    yoyAll: sql<string>`CONCAT(${summaryRevCluster.YoY_Voucher_Fisik}, '%')`.as('yoy_cvm'),
+                    ytdAll: sql<string>`CONCAT(${summaryRevCluster.YTD_Voucher_Fisik}, '%')`.as('ytd_cvm'),
+                    qoqAll: sql<string>`CONCAT(${summaryRevCluster.QoQ_Voucher_Fisik}, '%')`.as('qoq_cvm'),
                 })
                 .from(clusterSubquery)
                 .leftJoin(summaryRevCluster, eq(clusterSubquery.cluster, summaryRevCluster.cluster))
@@ -296,23 +318,41 @@ const app = new Hono()
             const kabupatenHeaderQuery = db
                 .selectDistinct({
                     name: sql<string | null>`'KABUPATEN'`,
-                    target_redeem_pv: sql<number>`''`,
-                    rev_cvm: sql<number>`''`,
-                    ach_target_fm_redeem_pv: sql<string>`''`,
-                    drr_redeem_pv: sql<string>`''`,
-                    gap_to_target_redeem_pv: sql<number>`''`,
-                    mom_cvm: sql<string>`''`,
-                    rev_cvm_absolut: sql<number>`''`,
-                    yoy_cvm: sql<string>`''`,
-                    ytd_cvm: sql<string>`''`,
-                    qoq_cvm: sql<string>`''`
+                    targetAll: sql<number>`''`,
+                    revAll: sql<number>`''`,
+                    achTargetFmAll: sql<string>`''`,
+                    drrAll: sql<string>`''`,
+                    gapToTargetAll: sql<number>`''`,
+                    momAll: sql<string>`''`,
+                    revAllAbsolut: sql<number>`''`,
+                    yoyAll: sql<string>`''`,
+                    ytdAll: sql<string>`''`,
+                    qoqAll: sql<string>`''`
                 })
                 .from(feiTargetPuma)
 
             const kabupatenSubquery = db
                 .select({ kabupaten: territoryArea4.kabupaten })
                 .from(territoryArea4)
-                .where(eq(territoryArea4.regional, 'PUMA'))
+                .where(branch && subbranch && cluster && kabupaten ? and(
+                    eq(territoryArea4.regional, 'PUMA'),
+                    eq(territoryArea4.branch, branch),
+                    eq(territoryArea4.subbranch, subbranch),
+                    eq(territoryArea4.cluster, cluster),
+                    eq(territoryArea4.kabupaten, kabupaten),
+                ) : branch && subbranch && cluster ? and(
+                    eq(territoryArea4.regional, 'PUMA'),
+                    eq(territoryArea4.branch, branch),
+                    eq(territoryArea4.subbranch, subbranch),
+                    eq(territoryArea4.cluster, cluster),
+                ) : branch && subbranch ? and(
+                    eq(territoryArea4.regional, 'PUMA'),
+                    eq(territoryArea4.branch, branch),
+                    eq(territoryArea4.subbranch, subbranch),
+                ) : branch ? and(
+                    eq(territoryArea4.regional, 'PUMA'),
+                    eq(territoryArea4.branch, branch),
+                ) : eq(territoryArea4.regional, 'PUMA'))
                 .groupBy(territoryArea4.kabupaten)
                 .as('a')
 
@@ -349,16 +389,16 @@ const app = new Hono()
             const revenueCity = db
                 .select({
                     name: kabupatenSubquery.kabupaten,
-                    target_redeem_pv: sql<number>`ROUND(SUM(${cityTargetRevenue.target_redeem_pv}/1000000000), 2)`.as('target_redeem_pv'),
-                    rev_cvm: sql<number>`ROUND(SUM(${summaryRevCity.Rev_Voucher_Fisik}), 2)`.as('rev_cvm'),
-                    ach_target_fm_redeem_pv: sql<string>`CONCAT(ROUND((SUM(${summaryRevCity.Rev_Voucher_Fisik})/SUM(${cityTargetRevenue.target_redeem_pv}/1000000000))*100, 2), '%')`.as('ach_target_fm_redeem_pv'),
-                    drr_redeem_pv: sql<string>`CONCAT(ROUND((SUM(${summaryRevCity.Rev_Voucher_Fisik})/(${today}/${daysInMonth}*SUM(${cityTargetRevenue.target_redeem_pv}/1000000000)))*100, 2), '%')`.as('drr_redeem_pv'),
-                    gap_to_target_redeem_pv: sql<number>`ROUND((COALESCE(SUM(${summaryRevCity.Rev_Voucher_Fisik}) - SUM(${cityTargetRevenue.target_redeem_pv}/1000000000), 0)), 2)`.as('gap_to_target_redeem_pv'),
-                    mom_cvm: sql<string>`CONCAT(${summaryRevCity.MoM_Voucher_Fisik}, '%')`.as('mom_cvm'),
-                    rev_cvm_absolut: sql<number>`ROUND(SUM(${summaryRevCity.Abs_Voucher_Fisik}), 2)`.as('rev_cvm_absolut'),
-                    yoy_cvm: sql<string>`CONCAT(${summaryRevCity.YoY_Voucher_Fisik}, '%')`.as('yoy_cvm'),
-                    ytd_cvm: sql<string>`CONCAT(${summaryRevCity.YTD_Voucher_Fisik}, '%')`.as('ytd_cvm'),
-                    qoq_cvm: sql<string>`CONCAT(${summaryRevCity.QoQ_Voucher_Fisik}, '%')`.as('qoq_cvm'),
+                    targetAll: sql<number>`ROUND(SUM(${cityTargetRevenue.target_redeem_pv}/1000000000), 2)`.as('target_redeem_pv'),
+                    revAll: sql<number>`ROUND(SUM(${summaryRevCity.Rev_Voucher_Fisik}), 2)`.as('rev_cvm'),
+                    achTargetFmAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevCity.Rev_Voucher_Fisik})/SUM(${cityTargetRevenue.target_redeem_pv}/1000000000))*100, 2), '%')`.as('ach_target_fm_redeem_pv'),
+                    drrAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevCity.Rev_Voucher_Fisik})/(${today}/${daysInMonth}*SUM(${cityTargetRevenue.target_redeem_pv}/1000000000)))*100, 2), '%')`.as('drr_redeem_pv'),
+                    gapToTargetAll: sql<number>`ROUND((COALESCE(SUM(${summaryRevCity.Rev_Voucher_Fisik}) - SUM(${cityTargetRevenue.target_redeem_pv}/1000000000), 0)), 2)`.as('gap_to_target_redeem_pv'),
+                    momAll: sql<string>`CONCAT(${summaryRevCity.MoM_Voucher_Fisik}, '%')`.as('mom_cvm'),
+                    revAllAbsolut: sql<number>`ROUND(SUM(${summaryRevCity.Abs_Voucher_Fisik}), 2)`.as('rev_cvm_absolut'),
+                    yoyAll: sql<string>`CONCAT(${summaryRevCity.YoY_Voucher_Fisik}, '%')`.as('yoy_cvm'),
+                    ytdAll: sql<string>`CONCAT(${summaryRevCity.YTD_Voucher_Fisik}, '%')`.as('ytd_cvm'),
+                    qoqAll: sql<string>`CONCAT(${summaryRevCity.QoQ_Voucher_Fisik}, '%')`.as('qoq_cvm'),
                 })
                 .from(kabupatenSubquery)
                 .leftJoin(summaryRevCity, eq(kabupatenSubquery.kabupaten, summaryRevCity.city))
@@ -369,7 +409,7 @@ const app = new Hono()
                 unionAll(revenueRegional, branchHeaderQuery, revenueBranch, subbranchHeaderQuery, revenueSubbranch, clusterHeaderQuery, revenueCluster, kabupatenHeaderQuery, revenueCity)
             ])
 
-            return c.json({ data: finalDataRevenue }, 200)
+            return c.json(finalDataRevenue, 200)
         })
     .get('/redeem-pv', zValidator('query', z.object({ date: z.coerce.date().optional() })),
         async c => {

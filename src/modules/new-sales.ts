@@ -4,7 +4,7 @@ import { Hono } from "hono";
 import { z } from "zod"
 import { zValidator } from "@hono/zod-validator";
 
-import { summaryRevAllByLosRegional, summaryRevAllByLosBranch, summaryRevAllByLosSubbranch, summaryRevAllByLosCluster, summaryRevAllByLosKabupaten, summaryRevByuByLosRegional, summaryRevByuByLosBranch, summaryRevByuByLosSubbranch, summaryRevByuByLosCluster, summaryRevByuByLosKabupaten, feiTargetPuma, summaryTrxNsAllKabupaten, summaryTrxNsPrabayarKabupaten, summaryTrxNsByuKabupaten } from "@/db/schema/v_honai_puma";
+import { summaryRevAllByLosRegional, summaryRevAllByLosBranch, summaryRevAllByLosSubbranch, summaryRevAllByLosCluster, summaryRevAllByLosKabupaten, summaryRevNsPrabayarKabupaten, feiTargetPuma, summaryTrxNsAllKabupaten, summaryTrxNsPrabayarKabupaten, summaryTrxNsByuKabupaten } from "@/db/schema/v_honai_puma";
 import { db } from "@/db";
 import { territoryArea4 } from "@/db/schema/puma_2025";
 import { index, unionAll } from "drizzle-orm/mysql-core";
@@ -1382,7 +1382,7 @@ const app = new Hono()
                 unionAll(revenueRegional, branchHeaderQuery, revenueBranch, subbranchHeaderQuery, revenueSubbranch, clusterHeaderQuery, revenueCluster, kabupatenHeaderQuery, revenueKabupaten)
             ])
 
-            return c.json({ data: finalDataRevenue })
+            return c.json(finalDataRevenue)
         })
     .get('/revenue-new-sales-v2', zValidator('query', z.object({ date: z.coerce.date().optional(), branch: z.string().optional(), subbranch: z.string().optional(), cluster: z.string().optional(), kabupaten: z.string().optional() })),
         async c => {
@@ -1784,7 +1784,7 @@ const app = new Hono()
             const daysInMonth = getDaysInMonth(selectedDate)
             const today = Number(format(selectedDate, 'd'))
 
-            const regionalSubquery = db
+            const regionalTerritory = db
                 .select({ regional: territoryArea4.regional })
                 .from(territoryArea4)
                 .where(eq(territoryArea4.regional, 'PUMA'))
@@ -1792,24 +1792,27 @@ const app = new Hono()
                 .as('a')
 
             const summaryRevRegional = db
-                .select()
-                .from(summaryRevAllByLosRegional, {
-                    useIndex: [
-                        index('tgl').on(summaryRevAllByLosRegional.tgl),
-                        index('regional').on(summaryRevAllByLosRegional.regional)
-                    ]
+                .select({
+                    regional: summaryRevNsPrabayarKabupaten.regional,
+                    rev_all_m: sum(summaryRevNsPrabayarKabupaten.rev_all_m).as('rev_all_m'),
+                    rev_all_m1: sum(summaryRevNsPrabayarKabupaten.rev_all_m1).as('rev_all_m1'),
+                    rev_all_m12: sum(summaryRevNsPrabayarKabupaten.rev_all_m12).as('rev_all_m12'),
+                    rev_all_y: sum(summaryRevNsPrabayarKabupaten.rev_all_y).as('rev_all_y'),
+                    rev_all_y1: sum(summaryRevNsPrabayarKabupaten.rev_all_y1).as('rev_all_y1'),
+                    rev_all_absolut: sum(summaryRevNsPrabayarKabupaten.rev_all_absolut).as('rev_all_absolut'),
                 })
+                .from(summaryRevNsPrabayarKabupaten)
                 .where(and(
-                    eq(summaryRevAllByLosRegional.tgl, currDate),
-                    eq(summaryRevAllByLosRegional.regional, 'PUMA'),
+                    eq(summaryRevNsPrabayarKabupaten.tgl, currDate),
+                    eq(summaryRevNsPrabayarKabupaten.regional, 'PUMA'),
                 ))
-                .groupBy(summaryRevAllByLosRegional.regional)
+                .groupBy(summaryRevNsPrabayarKabupaten.regional)
                 .as('b')
 
             const regionalTargetRevenue = db
                 .select({
                     regional: territoryArea4.regional,
-                    target_rev_ns_prepaid: sum(feiTargetPuma.rev_ns_prepaid).as('target_rev_ns_prepaid')
+                    target_rev_ns: sum(feiTargetPuma.rev_ns_prepaid).as('target_rev_ns')
                 })
                 .from(feiTargetPuma)
                 .rightJoin(territoryArea4, eq(feiTargetPuma.territory, territoryArea4.kabupaten))
@@ -1817,33 +1820,23 @@ const app = new Hono()
                 .groupBy(territoryArea4.regional)
                 .as('c')
 
-            const revByuRegional = db
-                .select()
-                .from(summaryRevByuByLosRegional)
-                .where(and(
-                    eq(summaryRevByuByLosRegional.tgl, currDate),
-                    eq(summaryRevByuByLosRegional.regional, 'PUMA')
-                ))
-                .groupBy(summaryRevByuByLosRegional.regional)
-                .as('d')
-
             const revenueRegional = db
                 .select({
-                    name: regionalSubquery.regional,
-                    targetAll: sql<number>`ROUND(SUM(${regionalTargetRevenue.target_rev_ns_prepaid}),2)`.as('target_ns'),
-                    revAll: sql<number>`ROUND(SUM(${summaryRevRegional.rev_new_sales_m} - ${revByuRegional.rev_new_sales_m}),2)`.as('rev_ns'),
-                    achTargetFmAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevRegional.rev_new_sales_m} - ${revByuRegional.rev_new_sales_m})/SUM(${regionalTargetRevenue.target_rev_ns_prepaid}))*100,2),'%')`.as('ach_target_fm_ns'),
-                    drrAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevRegional.rev_new_sales_m} - ${revByuRegional.rev_new_sales_m})/(${today}/${daysInMonth}*(SUM(${regionalTargetRevenue.target_rev_ns_prepaid}))))*100,2),'%')`.as('drr_ns'),
-                    gapToTargetAll: sql<number>`ROUND((COALESCE(SUM(${summaryRevRegional.rev_new_sales_m} - ${revByuRegional.rev_new_sales_m}) - SUM(${regionalTargetRevenue.target_rev_ns_prepaid}),0)),2)`.as('gap_to_target_ns'),
-                    momAll: sql<string>`CONCAT(ROUND(SUM(${summaryRevRegional.rev_new_sales_mom} - ${revByuRegional.rev_new_sales_mom}),2), '%')`.as('mom_ns'),
-                    yoyAll: sql<string>`CONCAT(ROUND(SUM(${summaryRevRegional.rev_new_sales_yoy} - ${revByuRegional.rev_new_sales_yoy}),2), '%')`.as('yoy_ns'),
-                    ytdAll: sql<string>`CONCAT(ROUND(SUM(${summaryRevRegional.rev_new_sales_ytd} - ${revByuRegional.rev_new_sales_ytd}),2), '%')`.as('ytd_ns'),
+                    name: regionalTerritory.regional,
+                    targetAll: sql<number>`ROUND(SUM(${regionalTargetRevenue.target_rev_ns}) * 10,2)`.as('target_rev_ns'),
+                    revAll: sql<number>`ROUND(SUM(${summaryRevRegional.rev_all_m}))`.as('rev_ns'),
+                    achTargetFmAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevRegional.rev_all_m})/(SUM(${regionalTargetRevenue.target_rev_ns}) * 10))*100, 2), '%')`.as('ach_target_fm_ns'),
+                    drrAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevRegional.rev_all_m})/(${today}/${daysInMonth}*((SUM(${regionalTargetRevenue.target_rev_ns}) * 10))))*100, 2), '%')`.as('drr_ns'),
+                    gapToTargetAll: sql<number>`ROUND(SUM(${summaryRevRegional.rev_all_m}) - (SUM(${regionalTargetRevenue.target_rev_ns}) * 10), 2)`.as('gap_to_target'),
+                    momAll: sql<string>`CONCAT(ROUND((SUM(rev_all_m) - SUM(rev_all_m1)) / SUM(rev_all_m1) * 100, 2),'%')`.as('mom'),
+                    revAllAbsolut: sql<number>`ROUND(SUM(rev_all_m) - SUM(rev_all_m1), 2)`.as('absolut'),
+                    yoyAll: sql<string>`CONCAT(ROUND((SUM(rev_all_m) - SUM(rev_all_m12)) / SUM(rev_all_m12) * 100, 2),'%')`.as('yoy'),
+                    ytdAll: sql<string>`CONCAT(ROUND((SUM(rev_all_y) - SUM(rev_all_y1)) / SUM(rev_all_y1) * 100, 2),'%')`.as('ytd')
                 })
-                .from(regionalSubquery)
-                .leftJoin(summaryRevRegional, eq(regionalSubquery.regional, summaryRevRegional.regional))
-                .leftJoin(regionalTargetRevenue, eq(regionalSubquery.regional, regionalTargetRevenue.regional))
-                .leftJoin(revByuRegional, eq(regionalSubquery.regional, revByuRegional.regional))
-                .groupBy(regionalSubquery.regional)
+                .from(regionalTerritory)
+                .leftJoin(summaryRevRegional, eq(regionalTerritory.regional, summaryRevRegional.regional))
+                .leftJoin(regionalTargetRevenue, eq(regionalTerritory.regional, regionalTargetRevenue.regional))
+                .groupBy(regionalTerritory.regional)
 
             const branchHeaderQuery = db
                 .selectDistinct({
@@ -1854,12 +1847,13 @@ const app = new Hono()
                     drrAll: sql<string>`''`.as('drr_ns'),
                     gapToTargetAll: sql<number>`''`.as('gap_to_target_ns'),
                     momAll: sql<string>`''`.as('mom_ns'),
+                    revAllAbsolut: sql<number>`''`.as('rev_ns_absolut'),
                     yoyAll: sql<string>`''`.as('yoy_ns'),
                     ytdAll: sql<string>`''`.as('ytd_ns'),
                 })
                 .from(feiTargetPuma)
 
-            const branchSubquery = db
+            const branchTerritory = db
                 .select({ branch: territoryArea4.branch })
                 .from(territoryArea4)
                 .where(and(
@@ -1870,25 +1864,27 @@ const app = new Hono()
                 .as('a')
 
             const summaryRevBranch = db
-                .select()
-                .from(summaryRevAllByLosBranch, {
-                    useIndex: [
-                        index('tgl').on(summaryRevAllByLosBranch.tgl),
-                        index('regional').on(summaryRevAllByLosBranch.regional),
-                        index('branch').on(summaryRevAllByLosBranch.branch),
-                    ]
+                .select({
+                    branch: summaryRevNsPrabayarKabupaten.branch,
+                    rev_all_m: sum(summaryRevNsPrabayarKabupaten.rev_all_m).as('rev_all_m'),
+                    rev_all_m1: sum(summaryRevNsPrabayarKabupaten.rev_all_m1).as('rev_all_m1'),
+                    rev_all_m12: sum(summaryRevNsPrabayarKabupaten.rev_all_m12).as('rev_all_m12'),
+                    rev_all_y: sum(summaryRevNsPrabayarKabupaten.rev_all_y).as('rev_all_y'),
+                    rev_all_y1: sum(summaryRevNsPrabayarKabupaten.rev_all_y1).as('rev_all_y1'),
+                    rev_all_absolut: sum(summaryRevNsPrabayarKabupaten.rev_all_absolut).as('rev_all_absolut'),
                 })
+                .from(summaryRevNsPrabayarKabupaten)
                 .where(and(
-                    eq(summaryRevAllByLosBranch.tgl, currDate),
-                    eq(summaryRevAllByLosBranch.regional, 'PUMA'),
+                    eq(summaryRevNsPrabayarKabupaten.tgl, currDate),
+                    eq(summaryRevNsPrabayarKabupaten.regional, 'PUMA'),
                 ))
-                .groupBy(summaryRevAllByLosBranch.branch)
+                .groupBy(sql`1`)
                 .as('b')
 
             const branchTargetRevenue = db
                 .select({
                     branch: territoryArea4.branch,
-                    target_rev_ns_prepaid: sum(feiTargetPuma.rev_ns_prepaid).as('target_rev_ns_prepaid')
+                    target_rev_ns: sum(feiTargetPuma.rev_ns_prepaid).as('target_rev_ns')
                 })
                 .from(feiTargetPuma)
                 .rightJoin(territoryArea4, eq(feiTargetPuma.territory, territoryArea4.kabupaten))
@@ -1896,33 +1892,23 @@ const app = new Hono()
                 .groupBy(territoryArea4.branch)
                 .as('c')
 
-            const revByuBranch = db
-                .select()
-                .from(summaryRevByuByLosBranch)
-                .where(and(
-                    eq(summaryRevByuByLosBranch.tgl, currDate),
-                    eq(summaryRevByuByLosBranch.regional, 'PUMA')
-                ))
-                .groupBy(summaryRevByuByLosBranch.branch)
-                .as('d')
-
             const revenueBranch = db
                 .select({
-                    name: branchSubquery.branch,
-                    targetAll: sql<number>`ROUND(SUM(${branchTargetRevenue.target_rev_ns_prepaid}),2)`.as('target_ns'),
-                    revAll: sql<number>`ROUND(SUM(${summaryRevBranch.rev_new_sales_m} - ${revByuBranch.rev_new_sales_m}),2)`.as('rev_ns'),
-                    achTargetFmAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevBranch.rev_new_sales_m} - ${revByuBranch.rev_new_sales_m})/SUM(${branchTargetRevenue.target_rev_ns_prepaid}))*100,2),'%')`.as('ach_target_fm_ns'),
-                    drrAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevBranch.rev_new_sales_m} - ${revByuBranch.rev_new_sales_m})/(${today}/${daysInMonth}*(SUM(${branchTargetRevenue.target_rev_ns_prepaid}))))*100,2),'%')`.as('drr_ns'),
-                    gapToTargetAll: sql<number>`ROUND((COALESCE(SUM(${summaryRevBranch.rev_new_sales_m} - ${revByuBranch.rev_new_sales_m}) - SUM(${branchTargetRevenue.target_rev_ns_prepaid}),0)),2)`.as('gap_to_target_ns'),
-                    momAll: sql<string>`CONCAT(ROUND(SUM(${summaryRevBranch.rev_new_sales_mom} - ${revByuBranch.rev_new_sales_mom}),2), '%')`.as('mom_ns'),
-                    yoyAll: sql<string>`CONCAT(ROUND(SUM(${summaryRevBranch.rev_new_sales_yoy} - ${revByuBranch.rev_new_sales_yoy}),2), '%')`.as('yoy_ns'),
-                    ytdAll: sql<string>`CONCAT(ROUND(SUM(${summaryRevBranch.rev_new_sales_ytd} - ${revByuBranch.rev_new_sales_ytd}),2), '%')`.as('ytd_ns'),
+                    name: branchTerritory.branch,
+                    targetAll: sql<number>`ROUND(SUM(${branchTargetRevenue.target_rev_ns}) * 10,2)`.as('target_rev_ns'),
+                    revAll: sql<number>`SUM(${summaryRevBranch.rev_all_m})`.as('rev_ns'),
+                    achTargetFmAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevBranch.rev_all_m})/(SUM(${branchTargetRevenue.target_rev_ns}) * 10))*100, 2), '%')`.as('ach_target_fm_ns'),
+                    drrAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevBranch.rev_all_m})/(${today}/${daysInMonth}*((SUM(${branchTargetRevenue.target_rev_ns}) * 10))))*100, 2), '%')`.as('drr_ns'),
+                    gapToTargetAll: sql<number>`ROUND(SUM(${summaryRevBranch.rev_all_m}) - (SUM(${branchTargetRevenue.target_rev_ns}) * 10), 2)`.as('gap_to_target'),
+                    momAll: sql<string>`CONCAT(ROUND((SUM(rev_all_m) - SUM(rev_all_m1)) / SUM(rev_all_m1) * 100, 2),'%')`.as('mom'),
+                    revAllAbsolut: sql<number>`ROUND(SUM(rev_all_m) - SUM(rev_all_m1), 2)`.as('absolut'),
+                    yoyAll: sql<string>`CONCAT(ROUND((SUM(rev_all_m) - SUM(rev_all_m12)) / SUM(rev_all_m12) * 100, 2),'%')`.as('yoy'),
+                    ytdAll: sql<string>`CONCAT(ROUND((SUM(rev_all_y) - SUM(rev_all_y1)) / SUM(rev_all_y1) * 100, 2),'%')`.as('ytd')
                 })
-                .from(branchSubquery)
-                .leftJoin(summaryRevBranch, eq(branchSubquery.branch, summaryRevBranch.branch))
-                .leftJoin(branchTargetRevenue, eq(branchSubquery.branch, branchTargetRevenue.branch))
-                .leftJoin(revByuBranch, eq(branchSubquery.branch, revByuBranch.branch))
-                .groupBy(branchSubquery.branch)
+                .from(branchTerritory)
+                .leftJoin(summaryRevBranch, eq(branchTerritory.branch, sql`b.branch`))
+                .leftJoin(branchTargetRevenue, eq(branchTerritory.branch, branchTargetRevenue.branch))
+                .groupBy(branchTerritory.branch)
 
             const subbranchHeaderQuery = db
                 .selectDistinct({
@@ -1933,13 +1919,14 @@ const app = new Hono()
                     drrAll: sql<string>`''`.as('drr_ns'),
                     gapToTargetAll: sql<number>`''`.as('gap_to_target_ns'),
                     momAll: sql<string>`''`.as('mom_ns'),
+                    revAllAbsolut: sql<number>`''`.as('rev_ns_absolut'),
                     yoyAll: sql<string>`''`.as('yoy_ns'),
                     ytdAll: sql<string>`''`.as('ytd_ns'),
                 })
                 .from(feiTargetPuma)
 
-            const subbranchSubquery = db
-                .select({ subbranch: territoryArea4.subbranch })
+            const subbranchTerritory = db
+                .select()
                 .from(territoryArea4)
                 .where(branch && subbranch ? and(
                     eq(territoryArea4.regional, 'PUMA'),
@@ -1947,32 +1934,33 @@ const app = new Hono()
                     eq(territoryArea4.subbranch, subbranch)
                 ) : branch ? and(
                     eq(territoryArea4.regional, 'PUMA'),
-                    eq(territoryArea4.branch, branch)
+                    eq(territoryArea4.branch, branch),
                 ) : eq(territoryArea4.regional, 'PUMA'))
                 .groupBy(territoryArea4.subbranch)
                 .as('a')
 
             const summaryRevSubbranch = db
-                .select()
-                .from(summaryRevAllByLosSubbranch, {
-                    useIndex: [
-                        index('tgl').on(summaryRevAllByLosSubbranch.tgl),
-                        index('regional').on(summaryRevAllByLosSubbranch.regional),
-                        index('branch').on(summaryRevAllByLosSubbranch.branch),
-                        index('subbranch').on(summaryRevAllByLosSubbranch.subbranch),
-                    ]
+                .select({
+                    subbranch: summaryRevNsPrabayarKabupaten.subbranch,
+                    rev_all_m: sum(summaryRevNsPrabayarKabupaten.rev_all_m).as('rev_all_m'),
+                    rev_all_m1: sum(summaryRevNsPrabayarKabupaten.rev_all_m1).as('rev_all_m1'),
+                    rev_all_m12: sum(summaryRevNsPrabayarKabupaten.rev_all_m12).as('rev_all_m12'),
+                    rev_all_y: sum(summaryRevNsPrabayarKabupaten.rev_all_y).as('rev_all_y'),
+                    rev_all_y1: sum(summaryRevNsPrabayarKabupaten.rev_all_y1).as('rev_all_y1'),
+                    rev_all_absolut: sum(summaryRevNsPrabayarKabupaten.rev_all_absolut).as('rev_all_absolut'),
                 })
+                .from(summaryRevNsPrabayarKabupaten)
                 .where(and(
-                    eq(summaryRevAllByLosSubbranch.tgl, currDate),
-                    eq(summaryRevAllByLosSubbranch.regional, 'PUMA'),
+                    eq(summaryRevNsPrabayarKabupaten.tgl, currDate),
+                    eq(summaryRevNsPrabayarKabupaten.regional, 'PUMA'),
                 ))
-                .groupBy(summaryRevAllByLosSubbranch.subbranch)
+                .groupBy(sql`1`)
                 .as('b')
 
             const subbranchTargetRevenue = db
                 .select({
                     subbranch: territoryArea4.subbranch,
-                    target_rev_ns_prepaid: sum(feiTargetPuma.rev_ns_prepaid).as('target_rev_ns_prepaid')
+                    target_rev_ns: sum(feiTargetPuma.rev_ns_prepaid).as('target_rev_ns')
                 })
                 .from(feiTargetPuma)
                 .rightJoin(territoryArea4, eq(feiTargetPuma.territory, territoryArea4.kabupaten))
@@ -1980,33 +1968,23 @@ const app = new Hono()
                 .groupBy(territoryArea4.subbranch)
                 .as('c')
 
-            const revByuSubbranch = db
-                .select()
-                .from(summaryRevByuByLosSubbranch)
-                .where(and(
-                    eq(summaryRevByuByLosSubbranch.tgl, currDate),
-                    eq(summaryRevByuByLosSubbranch.regional, 'PUMA')
-                ))
-                .groupBy(summaryRevByuByLosSubbranch.subbranch)
-                .as('d')
-
             const revenueSubbranch = db
                 .select({
-                    name: subbranchSubquery.subbranch,
-                    targetAll: sql<number>`ROUND(SUM(${subbranchTargetRevenue.target_rev_ns_prepaid}),2)`.as('target_ns'),
-                    revAll: sql<number>`ROUND(SUM(${summaryRevSubbranch.rev_new_sales_m} - ${revByuSubbranch.rev_new_sales_m}),2)`.as('rev_ns'),
-                    achTargetFmAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevSubbranch.rev_new_sales_m} - ${revByuSubbranch.rev_new_sales_m})/SUM(${subbranchTargetRevenue.target_rev_ns_prepaid}))*100,2),'%')`.as('ach_target_fm_ns'),
-                    drrAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevSubbranch.rev_new_sales_m} - ${revByuSubbranch.rev_new_sales_m})/(${today}/${daysInMonth}*(SUM(${subbranchTargetRevenue.target_rev_ns_prepaid}))))*100,2),'%')`.as('drr_ns'),
-                    gapToTargetAll: sql<number>`ROUND((COALESCE(SUM(${summaryRevSubbranch.rev_new_sales_m} - ${revByuSubbranch.rev_new_sales_m}) - SUM(${subbranchTargetRevenue.target_rev_ns_prepaid}),0)),2)`.as('gap_to_target_ns'),
-                    momAll: sql<string>`CONCAT(ROUND(SUM(${summaryRevSubbranch.rev_new_sales_mom} - ${revByuSubbranch.rev_new_sales_mom}),2), '%')`.as('mom_ns'),
-                    yoyAll: sql<string>`CONCAT(ROUND(SUM(${summaryRevSubbranch.rev_new_sales_yoy} - ${revByuSubbranch.rev_new_sales_yoy}),2), '%')`.as('yoy_ns'),
-                    ytdAll: sql<string>`CONCAT(ROUND(SUM(${summaryRevSubbranch.rev_new_sales_ytd} - ${revByuSubbranch.rev_new_sales_ytd}),2), '%')`.as('ytd_ns'),
+                    name: subbranchTerritory.subbranch,
+                    targetAll: sql<number>`ROUND(SUM(${subbranchTargetRevenue.target_rev_ns}) * 10,2)`.as('target_rev_ns'),
+                    revAll: sql<number>`ROUND(SUM(${summaryRevSubbranch.rev_all_m}))`.as('rev_ns'),
+                    achTargetFmAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevSubbranch.rev_all_m})/(SUM(${subbranchTargetRevenue.target_rev_ns}) * 10))*100, 2), '%')`.as('ach_target_fm_ns'),
+                    drrAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevSubbranch.rev_all_m})/(${today}/${daysInMonth}*((SUM(${subbranchTargetRevenue.target_rev_ns}) * 10))))*100, 2), '%')`.as('drr_ns'),
+                    gapToTargetAll: sql<number>`ROUND(SUM(${summaryRevSubbranch.rev_all_m}) - (SUM(${subbranchTargetRevenue.target_rev_ns}) * 10), 2)`.as('gap_to_target'),
+                    momAll: sql<string>`CONCAT(ROUND((SUM(rev_all_m) - SUM(rev_all_m1)) / SUM(rev_all_m1) * 100, 2),'%')`.as('mom'),
+                    revAllAbsolut: sql<number>`ROUND(SUM(rev_all_m) - SUM(rev_all_m1), 2)`.as('absolut'),
+                    yoyAll: sql<string>`CONCAT(ROUND((SUM(rev_all_m) - SUM(rev_all_m12)) / SUM(rev_all_m12) * 100, 2),'%')`.as('yoy'),
+                    ytdAll: sql<string>`CONCAT(ROUND((SUM(rev_all_y) - SUM(rev_all_y1)) / SUM(rev_all_y1) * 100, 2),'%')`.as('ytd')
                 })
-                .from(subbranchSubquery)
-                .leftJoin(summaryRevSubbranch, eq(subbranchSubquery.subbranch, summaryRevSubbranch.subbranch))
-                .leftJoin(subbranchTargetRevenue, eq(subbranchSubquery.subbranch, subbranchTargetRevenue.subbranch))
-                .leftJoin(revByuSubbranch, eq(subbranchSubquery.subbranch, revByuSubbranch.subbranch))
-                .groupBy(subbranchSubquery.subbranch)
+                .from(subbranchTerritory)
+                .leftJoin(summaryRevSubbranch, eq(subbranchTerritory.subbranch, summaryRevSubbranch.subbranch))
+                .leftJoin(subbranchTargetRevenue, eq(subbranchTerritory.subbranch, subbranchTargetRevenue.subbranch))
+                .groupBy(subbranchTerritory.subbranch)
 
             const clusterHeaderQuery = db
                 .selectDistinct({
@@ -2017,52 +1995,53 @@ const app = new Hono()
                     drrAll: sql<string>`''`.as('drr_ns'),
                     gapToTargetAll: sql<number>`''`.as('gap_to_target_ns'),
                     momAll: sql<string>`''`.as('mom_ns'),
+                    revAllAbsolut: sql<number>`''`.as('rev_ns_absolut'),
                     yoyAll: sql<string>`''`.as('yoy_ns'),
                     ytdAll: sql<string>`''`.as('ytd_ns'),
                 })
                 .from(feiTargetPuma)
 
-            const clusterSubquery = db
-                .select({ cluster: territoryArea4.cluster })
+            const clusterTerritory = db
+                .select()
                 .from(territoryArea4)
                 .where(branch && subbranch && cluster ? and(
                     eq(territoryArea4.regional, 'PUMA'),
                     eq(territoryArea4.branch, branch),
                     eq(territoryArea4.subbranch, subbranch),
-                    eq(territoryArea4.cluster, cluster),
+                    eq(territoryArea4.cluster, cluster)
                 ) : branch && subbranch ? and(
                     eq(territoryArea4.regional, 'PUMA'),
                     eq(territoryArea4.branch, branch),
-                    eq(territoryArea4.subbranch, subbranch),
+                    eq(territoryArea4.subbranch, subbranch)
                 ) : branch ? and(
                     eq(territoryArea4.regional, 'PUMA'),
                     eq(territoryArea4.branch, branch),
                 ) : eq(territoryArea4.regional, 'PUMA'))
-                .groupBy(territoryArea4.cluster)
+                .groupBy(territoryArea4.subbranch)
                 .as('a')
 
             const summaryRevCluster = db
-                .select()
-                .from(summaryRevAllByLosCluster, {
-                    useIndex: [
-                        index('tgl').on(summaryRevAllByLosCluster.tgl),
-                        index('regional').on(summaryRevAllByLosCluster.regional),
-                        index('branch').on(summaryRevAllByLosCluster.branch),
-                        index('subbranch').on(summaryRevAllByLosCluster.subbranch),
-                        index('cluster').on(summaryRevAllByLosCluster.cluster),
-                    ]
+                .select({
+                    cluster: summaryRevNsPrabayarKabupaten.cluster,
+                    rev_all_m: sum(summaryRevNsPrabayarKabupaten.rev_all_m).as('rev_all_m'),
+                    rev_all_m1: sum(summaryRevNsPrabayarKabupaten.rev_all_m1).as('rev_all_m1'),
+                    rev_all_m12: sum(summaryRevNsPrabayarKabupaten.rev_all_m12).as('rev_all_m12'),
+                    rev_all_y: sum(summaryRevNsPrabayarKabupaten.rev_all_y).as('rev_all_y'),
+                    rev_all_y1: sum(summaryRevNsPrabayarKabupaten.rev_all_y1).as('rev_all_y1'),
+                    rev_all_absolut: sum(summaryRevNsPrabayarKabupaten.rev_all_absolut).as('rev_all_absolut'),
                 })
+                .from(summaryRevNsPrabayarKabupaten)
                 .where(and(
-                    eq(summaryRevAllByLosCluster.tgl, currDate),
-                    eq(summaryRevAllByLosCluster.regional, 'PUMA'),
+                    eq(summaryRevNsPrabayarKabupaten.tgl, currDate),
+                    eq(summaryRevNsPrabayarKabupaten.regional, 'PUMA'),
                 ))
-                .groupBy(summaryRevAllByLosCluster.cluster)
+                .groupBy(sql`1`)
                 .as('b')
 
             const clusterTargetRevenue = db
                 .select({
                     cluster: territoryArea4.cluster,
-                    target_rev_ns_prepaid: sum(feiTargetPuma.rev_ns_prepaid).as('target_rev_ns_prepaid')
+                    target_rev_ns: sum(feiTargetPuma.rev_ns_prepaid).as('target_rev_ns')
                 })
                 .from(feiTargetPuma)
                 .rightJoin(territoryArea4, eq(feiTargetPuma.territory, territoryArea4.kabupaten))
@@ -2070,33 +2049,23 @@ const app = new Hono()
                 .groupBy(territoryArea4.cluster)
                 .as('c')
 
-            const revByuCluster = db
-                .select()
-                .from(summaryRevByuByLosCluster)
-                .where(and(
-                    eq(summaryRevByuByLosCluster.tgl, currDate),
-                    eq(summaryRevByuByLosCluster.regional, 'PUMA')
-                ))
-                .groupBy(summaryRevByuByLosCluster.cluster)
-                .as('d')
-
             const revenueCluster = db
                 .select({
-                    name: clusterSubquery.cluster,
-                    targetAll: sql<number>`ROUND(SUM(${clusterTargetRevenue.target_rev_ns_prepaid}),2)`.as('target_ns'),
-                    revAll: sql<number>`ROUND(SUM(${summaryRevCluster.rev_new_sales_m} - ${revByuCluster.rev_new_sales_m}),2)`.as('rev_ns'),
-                    achTargetFmAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevCluster.rev_new_sales_m} - ${revByuCluster.rev_new_sales_m})/SUM(${clusterTargetRevenue.target_rev_ns_prepaid}))*100,2),'%')`.as('ach_target_fm_ns'),
-                    drrAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevCluster.rev_new_sales_m} - ${revByuCluster.rev_new_sales_m})/(${today}/${daysInMonth}*(SUM(${clusterTargetRevenue.target_rev_ns_prepaid}))))*100,2),'%')`.as('drr_ns'),
-                    gapToTargetAll: sql<number>`ROUND((COALESCE(SUM(${summaryRevCluster.rev_new_sales_m} - ${revByuCluster.rev_new_sales_m}) - SUM(${clusterTargetRevenue.target_rev_ns_prepaid}),0)),2)`.as('gap_to_target_ns'),
-                    momAll: sql<string>`CONCAT(ROUND(SUM(${summaryRevCluster.rev_new_sales_mom} - ${revByuCluster.rev_new_sales_mom}),2), '%')`.as('mom_ns'),
-                    yoyAll: sql<string>`CONCAT(ROUND(SUM(${summaryRevCluster.rev_new_sales_yoy} - ${revByuCluster.rev_new_sales_yoy}),2), '%')`.as('yoy_ns'),
-                    ytdAll: sql<string>`CONCAT(ROUND(SUM(${summaryRevCluster.rev_new_sales_ytd} - ${revByuCluster.rev_new_sales_ytd}),2), '%')`.as('ytd_ns'),
+                    name: clusterTerritory.cluster,
+                    targetAll: sql<number>`ROUND(SUM(${clusterTargetRevenue.target_rev_ns}) * 10,2)`.as('target_rev_ns'),
+                    revAll: sql<number>`ROUND(SUM(${summaryRevCluster.rev_all_m}))`.as('rev_ns'),
+                    achTargetFmAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevCluster.rev_all_m})/(SUM(${clusterTargetRevenue.target_rev_ns}) * 10))*100, 2), '%')`.as('ach_target_fm_ns'),
+                    drrAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevCluster.rev_all_m})/(${today}/${daysInMonth}*((SUM(${clusterTargetRevenue.target_rev_ns}) * 10))))*100, 2), '%')`.as('drr_ns'),
+                    gapToTargetAll: sql<number>`ROUND(SUM(${summaryRevCluster.rev_all_m}) - (SUM(${clusterTargetRevenue.target_rev_ns}) * 10), 2)`.as('gap_to_target'),
+                    momAll: sql<string>`CONCAT(ROUND((SUM(rev_all_m) - SUM(rev_all_m1)) / SUM(rev_all_m1) * 100, 2),'%')`.as('mom'),
+                    revAllAbsolut: sql<number>`ROUND(SUM(rev_all_m) - SUM(rev_all_m1), 2)`.as('absolut'),
+                    yoyAll: sql<string>`CONCAT(ROUND((SUM(rev_all_m) - SUM(rev_all_m12)) / SUM(rev_all_m12) * 100, 2),'%')`.as('yoy'),
+                    ytdAll: sql<string>`CONCAT(ROUND((SUM(rev_all_y) - SUM(rev_all_y1)) / SUM(rev_all_y1) * 100, 2),'%')`.as('ytd')
                 })
-                .from(clusterSubquery)
-                .leftJoin(summaryRevCluster, eq(clusterSubquery.cluster, summaryRevCluster.cluster))
-                .leftJoin(clusterTargetRevenue, eq(clusterSubquery.cluster, clusterTargetRevenue.cluster))
-                .leftJoin(revByuCluster, eq(clusterSubquery.cluster, revByuCluster.cluster))
-                .groupBy(clusterSubquery.cluster)
+                .from(clusterTerritory)
+                .leftJoin(summaryRevCluster, eq(clusterTerritory.cluster, summaryRevCluster.cluster))
+                .leftJoin(clusterTargetRevenue, eq(clusterTerritory.cluster, clusterTargetRevenue.cluster))
+                .groupBy(clusterTerritory.cluster)
 
             const kabupatenHeaderQuery = db
                 .selectDistinct({
@@ -2107,13 +2076,16 @@ const app = new Hono()
                     drrAll: sql<string>`''`.as('drr_ns'),
                     gapToTargetAll: sql<number>`''`.as('gap_to_target_ns'),
                     momAll: sql<string>`''`.as('mom_ns'),
+                    revAllAbsolut: sql<number>`''`.as('rev_ns_absolut'),
                     yoyAll: sql<string>`''`.as('yoy_ns'),
                     ytdAll: sql<string>`''`.as('ytd_ns'),
                 })
                 .from(feiTargetPuma)
 
-            const kabupatenSubquery = db
-                .select({ kabupaten: territoryArea4.kabupaten })
+            const kabupatenTerritory = db
+                .select({
+                    kabupaten: territoryArea4.kabupaten,
+                })
                 .from(territoryArea4)
                 .where(branch && subbranch && cluster && kabupaten ? and(
                     eq(territoryArea4.regional, 'PUMA'),
@@ -2138,28 +2110,27 @@ const app = new Hono()
                 .as('a')
 
             const summaryRevKabupaten = db
-                .select()
-                .from(summaryRevAllByLosKabupaten, {
-                    useIndex: [
-                        index('tgl').on(summaryRevAllByLosKabupaten.tgl),
-                        index('regional').on(summaryRevAllByLosKabupaten.regional),
-                        index('branch').on(summaryRevAllByLosKabupaten.branch),
-                        index('subbranch').on(summaryRevAllByLosKabupaten.subbranch),
-                        index('cluster').on(summaryRevAllByLosKabupaten.cluster),
-                        index('kabupaten').on(summaryRevAllByLosKabupaten.kabupaten),
-                    ]
+                .select({
+                    kabupaten: summaryRevNsPrabayarKabupaten.kabupaten,
+                    rev_all_m: sum(summaryRevNsPrabayarKabupaten.rev_all_m).as('rev_all_m'),
+                    rev_all_m1: sum(summaryRevNsPrabayarKabupaten.rev_all_m1).as('rev_all_m1'),
+                    rev_all_m12: sum(summaryRevNsPrabayarKabupaten.rev_all_m12).as('rev_all_m12'),
+                    rev_all_y: sum(summaryRevNsPrabayarKabupaten.rev_all_y).as('rev_all_y'),
+                    rev_all_y1: sum(summaryRevNsPrabayarKabupaten.rev_all_y1).as('rev_all_y1'),
+                    rev_all_absolut: sum(summaryRevNsPrabayarKabupaten.rev_all_absolut).as('rev_all_absolut'),
                 })
+                .from(summaryRevNsPrabayarKabupaten)
                 .where(and(
-                    eq(summaryRevAllByLosKabupaten.tgl, currDate),
-                    eq(summaryRevAllByLosKabupaten.regional, 'PUMA'),
+                    eq(summaryRevNsPrabayarKabupaten.tgl, currDate),
+                    eq(summaryRevNsPrabayarKabupaten.regional, 'PUMA'),
                 ))
-                .groupBy(summaryRevAllByLosKabupaten.kabupaten)
+                .groupBy(sql`1`)
                 .as('b')
 
             const kabupatenTargetRevenue = db
                 .select({
                     kabupaten: territoryArea4.kabupaten,
-                    target_rev_ns_prepaid: sum(feiTargetPuma.rev_ns_prepaid).as('target_rev_ns_prepaid')
+                    target_rev_ns: sum(feiTargetPuma.rev_ns_prepaid).as('target_rev_ns')
                 })
                 .from(feiTargetPuma)
                 .rightJoin(territoryArea4, eq(feiTargetPuma.territory, territoryArea4.kabupaten))
@@ -2167,33 +2138,23 @@ const app = new Hono()
                 .groupBy(territoryArea4.kabupaten)
                 .as('c')
 
-            const revByuKabupaten = db
-                .select()
-                .from(summaryRevByuByLosKabupaten)
-                .where(and(
-                    eq(summaryRevByuByLosKabupaten.tgl, currDate),
-                    eq(summaryRevByuByLosKabupaten.regional, 'PUMA')
-                ))
-                .groupBy(summaryRevByuByLosKabupaten.kabupaten)
-                .as('d')
-
             const revenueKabupaten = db
                 .select({
-                    name: kabupatenSubquery.kabupaten,
-                    targetAll: sql<number>`ROUND(SUM(${kabupatenTargetRevenue.target_rev_ns_prepaid}),2)`.as('target_ns'),
-                    revAll: sql<number>`ROUND(SUM(${summaryRevKabupaten.rev_new_sales_m} - ${revByuKabupaten.rev_new_sales_m}),2)`.as('rev_ns'),
-                    achTargetFmAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevKabupaten.rev_new_sales_m} - ${revByuKabupaten.rev_new_sales_m})/SUM(${kabupatenTargetRevenue.target_rev_ns_prepaid}))*100,2),'%')`.as('ach_target_fm_ns'),
-                    drrAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevKabupaten.rev_new_sales_m} - ${revByuKabupaten.rev_new_sales_m})/(${today}/${daysInMonth}*(SUM(${kabupatenTargetRevenue.target_rev_ns_prepaid}))))*100,2),'%')`.as('drr_ns'),
-                    gapToTargetAll: sql<number>`ROUND((COALESCE(SUM(${summaryRevKabupaten.rev_new_sales_m} - ${revByuKabupaten.rev_new_sales_m}) - SUM(${kabupatenTargetRevenue.target_rev_ns_prepaid}),0)),2)`.as('gap_to_target_ns'),
-                    momAll: sql<string>`CONCAT(ROUND(SUM(${summaryRevKabupaten.rev_new_sales_mom} - ${revByuKabupaten.rev_new_sales_mom}),2), '%')`.as('mom_ns'),
-                    yoyAll: sql<string>`CONCAT(ROUND(SUM(${summaryRevKabupaten.rev_new_sales_yoy} - ${revByuKabupaten.rev_new_sales_yoy}),2), '%')`.as('yoy_ns'),
-                    ytdAll: sql<string>`CONCAT(ROUND(SUM(${summaryRevKabupaten.rev_new_sales_ytd} - ${revByuKabupaten.rev_new_sales_ytd}),2), '%')`.as('ytd_ns'),
+                    name: kabupatenTerritory.kabupaten,
+                    targetAll: sql<number>`ROUND(SUM(${kabupatenTargetRevenue.target_rev_ns}) * 10,2)`.as('target_rev_ns'),
+                    revAll: sql<number>`ROUND(SUM(${summaryRevKabupaten.rev_all_m}))`.as('rev_ns'),
+                    achTargetFmAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevKabupaten.rev_all_m})/(SUM(${kabupatenTargetRevenue.target_rev_ns}) * 10))*100, 2), '%')`.as('ach_target_fm_ns'),
+                    drrAll: sql<string>`CONCAT(ROUND((SUM(${summaryRevKabupaten.rev_all_m})/(${today}/${daysInMonth}*((SUM(${kabupatenTargetRevenue.target_rev_ns}) * 10))))*100, 2), '%')`.as('drr_ns'),
+                    gapToTargetAll: sql<number>`ROUND(SUM(${summaryRevKabupaten.rev_all_m}) - (SUM(${kabupatenTargetRevenue.target_rev_ns}) * 10), 2)`.as('gap_to_target'),
+                    momAll: sql<string>`CONCAT(ROUND((SUM(rev_all_m) - SUM(rev_all_m1)) / SUM(rev_all_m1) * 100, 2),'%')`.as('mom'),
+                    revAllAbsolut: sql<number>`ROUND(SUM(rev_all_m) - SUM(rev_all_m1), 2)`.as('absolut'),
+                    yoyAll: sql<string>`CONCAT(ROUND((SUM(rev_all_m) - SUM(rev_all_m12)) / SUM(rev_all_m12) * 100, 2),'%')`.as('yoy'),
+                    ytdAll: sql<string>`CONCAT(ROUND((SUM(rev_all_y) - SUM(rev_all_y1)) / SUM(rev_all_y1) * 100, 2),'%')`.as('ytd')
                 })
-                .from(kabupatenSubquery)
-                .leftJoin(summaryRevKabupaten, eq(kabupatenSubquery.kabupaten, summaryRevKabupaten.kabupaten))
-                .leftJoin(kabupatenTargetRevenue, eq(kabupatenSubquery.kabupaten, kabupatenTargetRevenue.kabupaten))
-                .leftJoin(revByuKabupaten, eq(kabupatenSubquery.kabupaten, revByuKabupaten.kabupaten))
-                .groupBy(kabupatenSubquery.kabupaten)
+                .from(kabupatenTerritory)
+                .leftJoin(summaryRevKabupaten, eq(kabupatenTerritory.kabupaten, summaryRevKabupaten.kabupaten))
+                .leftJoin(kabupatenTargetRevenue, eq(kabupatenTerritory.kabupaten, kabupatenTargetRevenue.kabupaten))
+                .groupBy(kabupatenTerritory.kabupaten)
 
             const [finalDataRevenue] = await Promise.all([
                 unionAll(revenueRegional, branchHeaderQuery, revenueBranch, subbranchHeaderQuery, revenueSubbranch, clusterHeaderQuery, revenueCluster, kabupatenHeaderQuery, revenueKabupaten)

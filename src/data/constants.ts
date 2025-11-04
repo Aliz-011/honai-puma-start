@@ -15,10 +15,5 @@ export const navItems = [
         title: "KV & Wording",
         url: "/campaign/kv-wording",
         icon: RiFileWordLine
-    },
-    {
-        title: "Settings",
-        url: "#",
-        icon: RiSettingsLine,
-    },
+    }
 ]

@@ -15,26 +15,23 @@ import { Route as HouseholdRouteImport } from './routes/household'
 import { Route as CampaignRouteImport } from './routes/campaign'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CampaignIndexRouteImport } from './routes/campaign/index'
+import { Route as PumaTrxNewSalesPrabayarRouteImport } from './routes/puma/trx-new-sales-prabayar'
+import { Route as PumaTrxNewSalesByuRouteImport } from './routes/puma/trx-new-sales-byu'
+import { Route as PumaTrxNewSalesRouteImport } from './routes/puma/trx-new-sales'
+import { Route as PumaTargetSoRouteImport } from './routes/puma/target-so'
+import { Route as PumaRevenueRedeemPvRouteImport } from './routes/puma/revenue-redeem-pv'
+import { Route as PumaRevenueNewSalesPrabayarRouteImport } from './routes/puma/revenue-new-sales-prabayar'
+import { Route as PumaRevenueNewSalesRouteImport } from './routes/puma/revenue-new-sales'
 import { Route as PumaRevenueGrossPrabayarRouteImport } from './routes/puma/revenue-gross-prabayar'
 import { Route as PumaRevenueGrossRouteImport } from './routes/puma/revenue-gross'
+import { Route as PumaRevenueCvmOutletRouteImport } from './routes/puma/revenue-cvm-outlet'
+import { Route as PumaRevenueCvmRouteImport } from './routes/puma/revenue-cvm'
 import { Route as PumaRevenueByuRouteImport } from './routes/puma/revenue-byu'
+import { Route as PumaPayingSubsRouteImport } from './routes/puma/paying-subs'
 import { Route as HouseholdSalesFulfilmentRouteImport } from './routes/household/sales-fulfilment'
 import { Route as HouseholdRevenueC3mrRouteImport } from './routes/household/revenue-c3mr'
 import { Route as HouseholdDemandsDeploymentRouteImport } from './routes/household/demands-deployment'
-import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
-import { Route as DemoDrizzleRouteImport } from './routes/demo/drizzle'
-import { Route as DemoDbChatApiRouteImport } from './routes/demo/db-chat-api'
-import { Route as DemoDbChatRouteImport } from './routes/demo/db-chat'
-import { Route as CampaignAchievementRouteImport } from './routes/campaign/achievement'
 import { Route as ApiSplatRouteImport } from './routes/api.$'
-import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
-import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
-import { Route as DemoApiTqTodosRouteImport } from './routes/demo/api.tq-todos'
-import { Route as DemoApiNamesRouteImport } from './routes/demo/api.names'
-import { Route as DemoStartSsrIndexRouteImport } from './routes/demo/start.ssr.index'
-import { Route as DemoStartSsrSpaModeRouteImport } from './routes/demo/start.ssr.spa-mode'
-import { Route as DemoStartSsrFullSsrRouteImport } from './routes/demo/start.ssr.full-ssr'
-import { Route as DemoStartSsrDataOnlyRouteImport } from './routes/demo/start.ssr.data-only'
 
 const PumaRoute = PumaRouteImport.update({
   id: '/puma',
@@ -66,6 +63,42 @@ const CampaignIndexRoute = CampaignIndexRouteImport.update({
   path: '/',
   getParentRoute: () => CampaignRoute,
 } as any)
+const PumaTrxNewSalesPrabayarRoute = PumaTrxNewSalesPrabayarRouteImport.update({
+  id: '/trx-new-sales-prabayar',
+  path: '/trx-new-sales-prabayar',
+  getParentRoute: () => PumaRoute,
+} as any)
+const PumaTrxNewSalesByuRoute = PumaTrxNewSalesByuRouteImport.update({
+  id: '/trx-new-sales-byu',
+  path: '/trx-new-sales-byu',
+  getParentRoute: () => PumaRoute,
+} as any)
+const PumaTrxNewSalesRoute = PumaTrxNewSalesRouteImport.update({
+  id: '/trx-new-sales',
+  path: '/trx-new-sales',
+  getParentRoute: () => PumaRoute,
+} as any)
+const PumaTargetSoRoute = PumaTargetSoRouteImport.update({
+  id: '/target-so',
+  path: '/target-so',
+  getParentRoute: () => PumaRoute,
+} as any)
+const PumaRevenueRedeemPvRoute = PumaRevenueRedeemPvRouteImport.update({
+  id: '/revenue-redeem-pv',
+  path: '/revenue-redeem-pv',
+  getParentRoute: () => PumaRoute,
+} as any)
+const PumaRevenueNewSalesPrabayarRoute =
+  PumaRevenueNewSalesPrabayarRouteImport.update({
+    id: '/revenue-new-sales-prabayar',
+    path: '/revenue-new-sales-prabayar',
+    getParentRoute: () => PumaRoute,
+  } as any)
+const PumaRevenueNewSalesRoute = PumaRevenueNewSalesRouteImport.update({
+  id: '/revenue-new-sales',
+  path: '/revenue-new-sales',
+  getParentRoute: () => PumaRoute,
+} as any)
 const PumaRevenueGrossPrabayarRoute =
   PumaRevenueGrossPrabayarRouteImport.update({
     id: '/revenue-gross-prabayar',
@@ -77,9 +110,24 @@ const PumaRevenueGrossRoute = PumaRevenueGrossRouteImport.update({
   path: '/revenue-gross',
   getParentRoute: () => PumaRoute,
 } as any)
+const PumaRevenueCvmOutletRoute = PumaRevenueCvmOutletRouteImport.update({
+  id: '/revenue-cvm-outlet',
+  path: '/revenue-cvm-outlet',
+  getParentRoute: () => PumaRoute,
+} as any)
+const PumaRevenueCvmRoute = PumaRevenueCvmRouteImport.update({
+  id: '/revenue-cvm',
+  path: '/revenue-cvm',
+  getParentRoute: () => PumaRoute,
+} as any)
 const PumaRevenueByuRoute = PumaRevenueByuRouteImport.update({
   id: '/revenue-byu',
   path: '/revenue-byu',
+  getParentRoute: () => PumaRoute,
+} as any)
+const PumaPayingSubsRoute = PumaPayingSubsRouteImport.update({
+  id: '/paying-subs',
+  path: '/paying-subs',
   getParentRoute: () => PumaRoute,
 } as any)
 const HouseholdSalesFulfilmentRoute =
@@ -99,74 +147,9 @@ const HouseholdDemandsDeploymentRoute =
     path: '/demands-deployment',
     getParentRoute: () => HouseholdRoute,
   } as any)
-const DemoTanstackQueryRoute = DemoTanstackQueryRouteImport.update({
-  id: '/demo/tanstack-query',
-  path: '/demo/tanstack-query',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoDrizzleRoute = DemoDrizzleRouteImport.update({
-  id: '/demo/drizzle',
-  path: '/demo/drizzle',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoDbChatApiRoute = DemoDbChatApiRouteImport.update({
-  id: '/demo/db-chat-api',
-  path: '/demo/db-chat-api',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoDbChatRoute = DemoDbChatRouteImport.update({
-  id: '/demo/db-chat',
-  path: '/demo/db-chat',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CampaignAchievementRoute = CampaignAchievementRouteImport.update({
-  id: '/achievement',
-  path: '/achievement',
-  getParentRoute: () => CampaignRoute,
-} as any)
 const ApiSplatRoute = ApiSplatRouteImport.update({
   id: '/api/$',
   path: '/api/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoStartServerFuncsRoute = DemoStartServerFuncsRouteImport.update({
-  id: '/demo/start/server-funcs',
-  path: '/demo/start/server-funcs',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoStartApiRequestRoute = DemoStartApiRequestRouteImport.update({
-  id: '/demo/start/api-request',
-  path: '/demo/start/api-request',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoApiTqTodosRoute = DemoApiTqTodosRouteImport.update({
-  id: '/demo/api/tq-todos',
-  path: '/demo/api/tq-todos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoApiNamesRoute = DemoApiNamesRouteImport.update({
-  id: '/demo/api/names',
-  path: '/demo/api/names',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoStartSsrIndexRoute = DemoStartSsrIndexRouteImport.update({
-  id: '/demo/start/ssr/',
-  path: '/demo/start/ssr/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoStartSsrSpaModeRoute = DemoStartSsrSpaModeRouteImport.update({
-  id: '/demo/start/ssr/spa-mode',
-  path: '/demo/start/ssr/spa-mode',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoStartSsrFullSsrRoute = DemoStartSsrFullSsrRouteImport.update({
-  id: '/demo/start/ssr/full-ssr',
-  path: '/demo/start/ssr/full-ssr',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoStartSsrDataOnlyRoute = DemoStartSsrDataOnlyRouteImport.update({
-  id: '/demo/start/ssr/data-only',
-  path: '/demo/start/ssr/data-only',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -177,26 +160,23 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/puma': typeof PumaRouteWithChildren
   '/api/$': typeof ApiSplatRoute
-  '/campaign/achievement': typeof CampaignAchievementRoute
-  '/demo/db-chat': typeof DemoDbChatRoute
-  '/demo/db-chat-api': typeof DemoDbChatApiRoute
-  '/demo/drizzle': typeof DemoDrizzleRoute
-  '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/household/demands-deployment': typeof HouseholdDemandsDeploymentRoute
   '/household/revenue-c3mr': typeof HouseholdRevenueC3mrRoute
   '/household/sales-fulfilment': typeof HouseholdSalesFulfilmentRoute
+  '/puma/paying-subs': typeof PumaPayingSubsRoute
   '/puma/revenue-byu': typeof PumaRevenueByuRoute
+  '/puma/revenue-cvm': typeof PumaRevenueCvmRoute
+  '/puma/revenue-cvm-outlet': typeof PumaRevenueCvmOutletRoute
   '/puma/revenue-gross': typeof PumaRevenueGrossRoute
   '/puma/revenue-gross-prabayar': typeof PumaRevenueGrossPrabayarRoute
+  '/puma/revenue-new-sales': typeof PumaRevenueNewSalesRoute
+  '/puma/revenue-new-sales-prabayar': typeof PumaRevenueNewSalesPrabayarRoute
+  '/puma/revenue-redeem-pv': typeof PumaRevenueRedeemPvRoute
+  '/puma/target-so': typeof PumaTargetSoRoute
+  '/puma/trx-new-sales': typeof PumaTrxNewSalesRoute
+  '/puma/trx-new-sales-byu': typeof PumaTrxNewSalesByuRoute
+  '/puma/trx-new-sales-prabayar': typeof PumaTrxNewSalesPrabayarRoute
   '/campaign/': typeof CampaignIndexRoute
-  '/demo/api/names': typeof DemoApiNamesRoute
-  '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
-  '/demo/start/api-request': typeof DemoStartApiRequestRoute
-  '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
-  '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
-  '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
-  '/demo/start/ssr/spa-mode': typeof DemoStartSsrSpaModeRoute
-  '/demo/start/ssr': typeof DemoStartSsrIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -204,26 +184,23 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/puma': typeof PumaRouteWithChildren
   '/api/$': typeof ApiSplatRoute
-  '/campaign/achievement': typeof CampaignAchievementRoute
-  '/demo/db-chat': typeof DemoDbChatRoute
-  '/demo/db-chat-api': typeof DemoDbChatApiRoute
-  '/demo/drizzle': typeof DemoDrizzleRoute
-  '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/household/demands-deployment': typeof HouseholdDemandsDeploymentRoute
   '/household/revenue-c3mr': typeof HouseholdRevenueC3mrRoute
   '/household/sales-fulfilment': typeof HouseholdSalesFulfilmentRoute
+  '/puma/paying-subs': typeof PumaPayingSubsRoute
   '/puma/revenue-byu': typeof PumaRevenueByuRoute
+  '/puma/revenue-cvm': typeof PumaRevenueCvmRoute
+  '/puma/revenue-cvm-outlet': typeof PumaRevenueCvmOutletRoute
   '/puma/revenue-gross': typeof PumaRevenueGrossRoute
   '/puma/revenue-gross-prabayar': typeof PumaRevenueGrossPrabayarRoute
+  '/puma/revenue-new-sales': typeof PumaRevenueNewSalesRoute
+  '/puma/revenue-new-sales-prabayar': typeof PumaRevenueNewSalesPrabayarRoute
+  '/puma/revenue-redeem-pv': typeof PumaRevenueRedeemPvRoute
+  '/puma/target-so': typeof PumaTargetSoRoute
+  '/puma/trx-new-sales': typeof PumaTrxNewSalesRoute
+  '/puma/trx-new-sales-byu': typeof PumaTrxNewSalesByuRoute
+  '/puma/trx-new-sales-prabayar': typeof PumaTrxNewSalesPrabayarRoute
   '/campaign': typeof CampaignIndexRoute
-  '/demo/api/names': typeof DemoApiNamesRoute
-  '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
-  '/demo/start/api-request': typeof DemoStartApiRequestRoute
-  '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
-  '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
-  '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
-  '/demo/start/ssr/spa-mode': typeof DemoStartSsrSpaModeRoute
-  '/demo/start/ssr': typeof DemoStartSsrIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -233,26 +210,23 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/puma': typeof PumaRouteWithChildren
   '/api/$': typeof ApiSplatRoute
-  '/campaign/achievement': typeof CampaignAchievementRoute
-  '/demo/db-chat': typeof DemoDbChatRoute
-  '/demo/db-chat-api': typeof DemoDbChatApiRoute
-  '/demo/drizzle': typeof DemoDrizzleRoute
-  '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/household/demands-deployment': typeof HouseholdDemandsDeploymentRoute
   '/household/revenue-c3mr': typeof HouseholdRevenueC3mrRoute
   '/household/sales-fulfilment': typeof HouseholdSalesFulfilmentRoute
+  '/puma/paying-subs': typeof PumaPayingSubsRoute
   '/puma/revenue-byu': typeof PumaRevenueByuRoute
+  '/puma/revenue-cvm': typeof PumaRevenueCvmRoute
+  '/puma/revenue-cvm-outlet': typeof PumaRevenueCvmOutletRoute
   '/puma/revenue-gross': typeof PumaRevenueGrossRoute
   '/puma/revenue-gross-prabayar': typeof PumaRevenueGrossPrabayarRoute
+  '/puma/revenue-new-sales': typeof PumaRevenueNewSalesRoute
+  '/puma/revenue-new-sales-prabayar': typeof PumaRevenueNewSalesPrabayarRoute
+  '/puma/revenue-redeem-pv': typeof PumaRevenueRedeemPvRoute
+  '/puma/target-so': typeof PumaTargetSoRoute
+  '/puma/trx-new-sales': typeof PumaTrxNewSalesRoute
+  '/puma/trx-new-sales-byu': typeof PumaTrxNewSalesByuRoute
+  '/puma/trx-new-sales-prabayar': typeof PumaTrxNewSalesPrabayarRoute
   '/campaign/': typeof CampaignIndexRoute
-  '/demo/api/names': typeof DemoApiNamesRoute
-  '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
-  '/demo/start/api-request': typeof DemoStartApiRequestRoute
-  '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
-  '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
-  '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
-  '/demo/start/ssr/spa-mode': typeof DemoStartSsrSpaModeRoute
-  '/demo/start/ssr/': typeof DemoStartSsrIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -263,26 +237,23 @@ export interface FileRouteTypes {
     | '/login'
     | '/puma'
     | '/api/$'
-    | '/campaign/achievement'
-    | '/demo/db-chat'
-    | '/demo/db-chat-api'
-    | '/demo/drizzle'
-    | '/demo/tanstack-query'
     | '/household/demands-deployment'
     | '/household/revenue-c3mr'
     | '/household/sales-fulfilment'
+    | '/puma/paying-subs'
     | '/puma/revenue-byu'
+    | '/puma/revenue-cvm'
+    | '/puma/revenue-cvm-outlet'
     | '/puma/revenue-gross'
     | '/puma/revenue-gross-prabayar'
+    | '/puma/revenue-new-sales'
+    | '/puma/revenue-new-sales-prabayar'
+    | '/puma/revenue-redeem-pv'
+    | '/puma/target-so'
+    | '/puma/trx-new-sales'
+    | '/puma/trx-new-sales-byu'
+    | '/puma/trx-new-sales-prabayar'
     | '/campaign/'
-    | '/demo/api/names'
-    | '/demo/api/tq-todos'
-    | '/demo/start/api-request'
-    | '/demo/start/server-funcs'
-    | '/demo/start/ssr/data-only'
-    | '/demo/start/ssr/full-ssr'
-    | '/demo/start/ssr/spa-mode'
-    | '/demo/start/ssr'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -290,26 +261,23 @@ export interface FileRouteTypes {
     | '/login'
     | '/puma'
     | '/api/$'
-    | '/campaign/achievement'
-    | '/demo/db-chat'
-    | '/demo/db-chat-api'
-    | '/demo/drizzle'
-    | '/demo/tanstack-query'
     | '/household/demands-deployment'
     | '/household/revenue-c3mr'
     | '/household/sales-fulfilment'
+    | '/puma/paying-subs'
     | '/puma/revenue-byu'
+    | '/puma/revenue-cvm'
+    | '/puma/revenue-cvm-outlet'
     | '/puma/revenue-gross'
     | '/puma/revenue-gross-prabayar'
+    | '/puma/revenue-new-sales'
+    | '/puma/revenue-new-sales-prabayar'
+    | '/puma/revenue-redeem-pv'
+    | '/puma/target-so'
+    | '/puma/trx-new-sales'
+    | '/puma/trx-new-sales-byu'
+    | '/puma/trx-new-sales-prabayar'
     | '/campaign'
-    | '/demo/api/names'
-    | '/demo/api/tq-todos'
-    | '/demo/start/api-request'
-    | '/demo/start/server-funcs'
-    | '/demo/start/ssr/data-only'
-    | '/demo/start/ssr/full-ssr'
-    | '/demo/start/ssr/spa-mode'
-    | '/demo/start/ssr'
   id:
     | '__root__'
     | '/'
@@ -318,26 +286,23 @@ export interface FileRouteTypes {
     | '/login'
     | '/puma'
     | '/api/$'
-    | '/campaign/achievement'
-    | '/demo/db-chat'
-    | '/demo/db-chat-api'
-    | '/demo/drizzle'
-    | '/demo/tanstack-query'
     | '/household/demands-deployment'
     | '/household/revenue-c3mr'
     | '/household/sales-fulfilment'
+    | '/puma/paying-subs'
     | '/puma/revenue-byu'
+    | '/puma/revenue-cvm'
+    | '/puma/revenue-cvm-outlet'
     | '/puma/revenue-gross'
     | '/puma/revenue-gross-prabayar'
+    | '/puma/revenue-new-sales'
+    | '/puma/revenue-new-sales-prabayar'
+    | '/puma/revenue-redeem-pv'
+    | '/puma/target-so'
+    | '/puma/trx-new-sales'
+    | '/puma/trx-new-sales-byu'
+    | '/puma/trx-new-sales-prabayar'
     | '/campaign/'
-    | '/demo/api/names'
-    | '/demo/api/tq-todos'
-    | '/demo/start/api-request'
-    | '/demo/start/server-funcs'
-    | '/demo/start/ssr/data-only'
-    | '/demo/start/ssr/full-ssr'
-    | '/demo/start/ssr/spa-mode'
-    | '/demo/start/ssr/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -347,18 +312,6 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PumaRoute: typeof PumaRouteWithChildren
   ApiSplatRoute: typeof ApiSplatRoute
-  DemoDbChatRoute: typeof DemoDbChatRoute
-  DemoDbChatApiRoute: typeof DemoDbChatApiRoute
-  DemoDrizzleRoute: typeof DemoDrizzleRoute
-  DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
-  DemoApiNamesRoute: typeof DemoApiNamesRoute
-  DemoApiTqTodosRoute: typeof DemoApiTqTodosRoute
-  DemoStartApiRequestRoute: typeof DemoStartApiRequestRoute
-  DemoStartServerFuncsRoute: typeof DemoStartServerFuncsRoute
-  DemoStartSsrDataOnlyRoute: typeof DemoStartSsrDataOnlyRoute
-  DemoStartSsrFullSsrRoute: typeof DemoStartSsrFullSsrRoute
-  DemoStartSsrSpaModeRoute: typeof DemoStartSsrSpaModeRoute
-  DemoStartSsrIndexRoute: typeof DemoStartSsrIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -405,6 +358,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CampaignIndexRouteImport
       parentRoute: typeof CampaignRoute
     }
+    '/puma/trx-new-sales-prabayar': {
+      id: '/puma/trx-new-sales-prabayar'
+      path: '/trx-new-sales-prabayar'
+      fullPath: '/puma/trx-new-sales-prabayar'
+      preLoaderRoute: typeof PumaTrxNewSalesPrabayarRouteImport
+      parentRoute: typeof PumaRoute
+    }
+    '/puma/trx-new-sales-byu': {
+      id: '/puma/trx-new-sales-byu'
+      path: '/trx-new-sales-byu'
+      fullPath: '/puma/trx-new-sales-byu'
+      preLoaderRoute: typeof PumaTrxNewSalesByuRouteImport
+      parentRoute: typeof PumaRoute
+    }
+    '/puma/trx-new-sales': {
+      id: '/puma/trx-new-sales'
+      path: '/trx-new-sales'
+      fullPath: '/puma/trx-new-sales'
+      preLoaderRoute: typeof PumaTrxNewSalesRouteImport
+      parentRoute: typeof PumaRoute
+    }
+    '/puma/target-so': {
+      id: '/puma/target-so'
+      path: '/target-so'
+      fullPath: '/puma/target-so'
+      preLoaderRoute: typeof PumaTargetSoRouteImport
+      parentRoute: typeof PumaRoute
+    }
+    '/puma/revenue-redeem-pv': {
+      id: '/puma/revenue-redeem-pv'
+      path: '/revenue-redeem-pv'
+      fullPath: '/puma/revenue-redeem-pv'
+      preLoaderRoute: typeof PumaRevenueRedeemPvRouteImport
+      parentRoute: typeof PumaRoute
+    }
+    '/puma/revenue-new-sales-prabayar': {
+      id: '/puma/revenue-new-sales-prabayar'
+      path: '/revenue-new-sales-prabayar'
+      fullPath: '/puma/revenue-new-sales-prabayar'
+      preLoaderRoute: typeof PumaRevenueNewSalesPrabayarRouteImport
+      parentRoute: typeof PumaRoute
+    }
+    '/puma/revenue-new-sales': {
+      id: '/puma/revenue-new-sales'
+      path: '/revenue-new-sales'
+      fullPath: '/puma/revenue-new-sales'
+      preLoaderRoute: typeof PumaRevenueNewSalesRouteImport
+      parentRoute: typeof PumaRoute
+    }
     '/puma/revenue-gross-prabayar': {
       id: '/puma/revenue-gross-prabayar'
       path: '/revenue-gross-prabayar'
@@ -419,11 +421,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PumaRevenueGrossRouteImport
       parentRoute: typeof PumaRoute
     }
+    '/puma/revenue-cvm-outlet': {
+      id: '/puma/revenue-cvm-outlet'
+      path: '/revenue-cvm-outlet'
+      fullPath: '/puma/revenue-cvm-outlet'
+      preLoaderRoute: typeof PumaRevenueCvmOutletRouteImport
+      parentRoute: typeof PumaRoute
+    }
+    '/puma/revenue-cvm': {
+      id: '/puma/revenue-cvm'
+      path: '/revenue-cvm'
+      fullPath: '/puma/revenue-cvm'
+      preLoaderRoute: typeof PumaRevenueCvmRouteImport
+      parentRoute: typeof PumaRoute
+    }
     '/puma/revenue-byu': {
       id: '/puma/revenue-byu'
       path: '/revenue-byu'
       fullPath: '/puma/revenue-byu'
       preLoaderRoute: typeof PumaRevenueByuRouteImport
+      parentRoute: typeof PumaRoute
+    }
+    '/puma/paying-subs': {
+      id: '/puma/paying-subs'
+      path: '/paying-subs'
+      fullPath: '/puma/paying-subs'
+      preLoaderRoute: typeof PumaPayingSubsRouteImport
       parentRoute: typeof PumaRoute
     }
     '/household/sales-fulfilment': {
@@ -447,41 +470,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HouseholdDemandsDeploymentRouteImport
       parentRoute: typeof HouseholdRoute
     }
-    '/demo/tanstack-query': {
-      id: '/demo/tanstack-query'
-      path: '/demo/tanstack-query'
-      fullPath: '/demo/tanstack-query'
-      preLoaderRoute: typeof DemoTanstackQueryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/drizzle': {
-      id: '/demo/drizzle'
-      path: '/demo/drizzle'
-      fullPath: '/demo/drizzle'
-      preLoaderRoute: typeof DemoDrizzleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/db-chat-api': {
-      id: '/demo/db-chat-api'
-      path: '/demo/db-chat-api'
-      fullPath: '/demo/db-chat-api'
-      preLoaderRoute: typeof DemoDbChatApiRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/db-chat': {
-      id: '/demo/db-chat'
-      path: '/demo/db-chat'
-      fullPath: '/demo/db-chat'
-      preLoaderRoute: typeof DemoDbChatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/campaign/achievement': {
-      id: '/campaign/achievement'
-      path: '/achievement'
-      fullPath: '/campaign/achievement'
-      preLoaderRoute: typeof CampaignAchievementRouteImport
-      parentRoute: typeof CampaignRoute
-    }
     '/api/$': {
       id: '/api/$'
       path: '/api/$'
@@ -489,72 +477,14 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/demo/start/server-funcs': {
-      id: '/demo/start/server-funcs'
-      path: '/demo/start/server-funcs'
-      fullPath: '/demo/start/server-funcs'
-      preLoaderRoute: typeof DemoStartServerFuncsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/start/api-request': {
-      id: '/demo/start/api-request'
-      path: '/demo/start/api-request'
-      fullPath: '/demo/start/api-request'
-      preLoaderRoute: typeof DemoStartApiRequestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/api/tq-todos': {
-      id: '/demo/api/tq-todos'
-      path: '/demo/api/tq-todos'
-      fullPath: '/demo/api/tq-todos'
-      preLoaderRoute: typeof DemoApiTqTodosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/api/names': {
-      id: '/demo/api/names'
-      path: '/demo/api/names'
-      fullPath: '/demo/api/names'
-      preLoaderRoute: typeof DemoApiNamesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/start/ssr/': {
-      id: '/demo/start/ssr/'
-      path: '/demo/start/ssr'
-      fullPath: '/demo/start/ssr'
-      preLoaderRoute: typeof DemoStartSsrIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/start/ssr/spa-mode': {
-      id: '/demo/start/ssr/spa-mode'
-      path: '/demo/start/ssr/spa-mode'
-      fullPath: '/demo/start/ssr/spa-mode'
-      preLoaderRoute: typeof DemoStartSsrSpaModeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/start/ssr/full-ssr': {
-      id: '/demo/start/ssr/full-ssr'
-      path: '/demo/start/ssr/full-ssr'
-      fullPath: '/demo/start/ssr/full-ssr'
-      preLoaderRoute: typeof DemoStartSsrFullSsrRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/start/ssr/data-only': {
-      id: '/demo/start/ssr/data-only'
-      path: '/demo/start/ssr/data-only'
-      fullPath: '/demo/start/ssr/data-only'
-      preLoaderRoute: typeof DemoStartSsrDataOnlyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 interface CampaignRouteChildren {
-  CampaignAchievementRoute: typeof CampaignAchievementRoute
   CampaignIndexRoute: typeof CampaignIndexRoute
 }
 
 const CampaignRouteChildren: CampaignRouteChildren = {
-  CampaignAchievementRoute: CampaignAchievementRoute,
   CampaignIndexRoute: CampaignIndexRoute,
 }
 
@@ -579,15 +509,35 @@ const HouseholdRouteWithChildren = HouseholdRoute._addFileChildren(
 )
 
 interface PumaRouteChildren {
+  PumaPayingSubsRoute: typeof PumaPayingSubsRoute
   PumaRevenueByuRoute: typeof PumaRevenueByuRoute
+  PumaRevenueCvmRoute: typeof PumaRevenueCvmRoute
+  PumaRevenueCvmOutletRoute: typeof PumaRevenueCvmOutletRoute
   PumaRevenueGrossRoute: typeof PumaRevenueGrossRoute
   PumaRevenueGrossPrabayarRoute: typeof PumaRevenueGrossPrabayarRoute
+  PumaRevenueNewSalesRoute: typeof PumaRevenueNewSalesRoute
+  PumaRevenueNewSalesPrabayarRoute: typeof PumaRevenueNewSalesPrabayarRoute
+  PumaRevenueRedeemPvRoute: typeof PumaRevenueRedeemPvRoute
+  PumaTargetSoRoute: typeof PumaTargetSoRoute
+  PumaTrxNewSalesRoute: typeof PumaTrxNewSalesRoute
+  PumaTrxNewSalesByuRoute: typeof PumaTrxNewSalesByuRoute
+  PumaTrxNewSalesPrabayarRoute: typeof PumaTrxNewSalesPrabayarRoute
 }
 
 const PumaRouteChildren: PumaRouteChildren = {
+  PumaPayingSubsRoute: PumaPayingSubsRoute,
   PumaRevenueByuRoute: PumaRevenueByuRoute,
+  PumaRevenueCvmRoute: PumaRevenueCvmRoute,
+  PumaRevenueCvmOutletRoute: PumaRevenueCvmOutletRoute,
   PumaRevenueGrossRoute: PumaRevenueGrossRoute,
   PumaRevenueGrossPrabayarRoute: PumaRevenueGrossPrabayarRoute,
+  PumaRevenueNewSalesRoute: PumaRevenueNewSalesRoute,
+  PumaRevenueNewSalesPrabayarRoute: PumaRevenueNewSalesPrabayarRoute,
+  PumaRevenueRedeemPvRoute: PumaRevenueRedeemPvRoute,
+  PumaTargetSoRoute: PumaTargetSoRoute,
+  PumaTrxNewSalesRoute: PumaTrxNewSalesRoute,
+  PumaTrxNewSalesByuRoute: PumaTrxNewSalesByuRoute,
+  PumaTrxNewSalesPrabayarRoute: PumaTrxNewSalesPrabayarRoute,
 }
 
 const PumaRouteWithChildren = PumaRoute._addFileChildren(PumaRouteChildren)
@@ -599,18 +549,6 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PumaRoute: PumaRouteWithChildren,
   ApiSplatRoute: ApiSplatRoute,
-  DemoDbChatRoute: DemoDbChatRoute,
-  DemoDbChatApiRoute: DemoDbChatApiRoute,
-  DemoDrizzleRoute: DemoDrizzleRoute,
-  DemoTanstackQueryRoute: DemoTanstackQueryRoute,
-  DemoApiNamesRoute: DemoApiNamesRoute,
-  DemoApiTqTodosRoute: DemoApiTqTodosRoute,
-  DemoStartApiRequestRoute: DemoStartApiRequestRoute,
-  DemoStartServerFuncsRoute: DemoStartServerFuncsRoute,
-  DemoStartSsrDataOnlyRoute: DemoStartSsrDataOnlyRoute,
-  DemoStartSsrFullSsrRoute: DemoStartSsrFullSsrRoute,
-  DemoStartSsrSpaModeRoute: DemoStartSsrSpaModeRoute,
-  DemoStartSsrIndexRoute: DemoStartSsrIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,7 +1,14 @@
+import { formatDate, subDays } from "date-fns"
 import { useQuery } from "@tanstack/react-query"
 import { useMemo, useState } from "react"
 import { Funnel, Loader2 } from "lucide-react"
 import { useQueryStates, parseAsString } from 'nuqs'
+import DatePicker from 'react-datepicker';
+import { RiDownload2Line } from "@remixicon/react"
+import { toast } from "sonner"
+
+import 'react-datepicker/dist/react-datepicker.css';
+
 
 import {
     Select,
@@ -11,14 +18,13 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import {
-    Field,
+    Field
 } from "@/components/ui/field"
 import { getBranches, getClusters, getKabupatens, getKecamatans } from "@/data/territories"
-import { RiDownload2Line } from "@remixicon/react"
-import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 
 const searchParams = {
+    date: parseAsString.withDefault(''),
     branch: parseAsString.withDefault(''),
     cluster: parseAsString.withDefault(''),
     kabupaten: parseAsString.withDefault(''),
@@ -32,6 +38,9 @@ export const Filter = () => {
     // URL state (what triggers the actual query)
     const [urlFilters, setUrlFilters] = useQueryStates(searchParams)
 
+    const [localDate, setLocalDate] = useState<Date | null>(
+        urlFilters.date ? new Date(urlFilters.date) : null
+    )
     const [localBranch, setLocalBranch] = useState(urlFilters.branch)
     const [localCluster, setLocalCluster] = useState(urlFilters.cluster)
     const [localKabupaten, setLocalKabupaten] = useState(urlFilters.kabupaten)
@@ -100,6 +109,7 @@ export const Filter = () => {
 
     const handleApplyFilters = () => {
         setUrlFilters({
+            date: localDate ? formatDate(localDate, 'yyyy-MM-dd') : '',
             branch: localBranch,
             cluster: localCluster,
             kabupaten: localKabupaten,
@@ -111,6 +121,7 @@ export const Filter = () => {
     }
 
     const handleClearFilter = () => {
+        setLocalDate(subDays(new Date(), 2))
         setLocalBranch('')
         setLocalCluster('')
         setLocalKabupaten('')
@@ -119,6 +130,7 @@ export const Filter = () => {
         setLocalRows('0')
         setLocalProductOffer('')
         setUrlFilters({
+            date: '',
             branch: '',
             cluster: '',
             kabupaten: '',
@@ -132,6 +144,7 @@ export const Filter = () => {
     const handleDownload = async () => {
         // Sync URL filters with local state before download
         setUrlFilters({
+            date: localDate ? formatDate(localDate, 'yyyy-MM-dd') : '',
             branch: localBranch,
             cluster: localCluster,
             kabupaten: localKabupaten,
@@ -145,6 +158,7 @@ export const Filter = () => {
 
         try {
             const params = new URLSearchParams({
+                ...(localDate && { date: formatDate(localDate, 'yyyy-MM-dd') }),
                 ...(localBranch && { branch: localBranch }),
                 ...(localCluster && { cluster: localCluster }),
                 ...(localKabupaten && { kabupaten: localKabupaten }),
@@ -214,7 +228,7 @@ export const Filter = () => {
 
             <div className="w-full max-w-md">
                 <Field>
-                    <Select value={localCluster} onValueChange={setLocalCluster}>
+                    <Select value={localCluster} onValueChange={setLocalCluster} disabled={!localBranch}>
                         <SelectTrigger>
                             <SelectValue placeholder="Cluster" />
                         </SelectTrigger>
@@ -231,7 +245,7 @@ export const Filter = () => {
 
             <div className="w-full max-w-md">
                 <Field>
-                    <Select value={localKabupaten} onValueChange={setLocalKabupaten}>
+                    <Select value={localKabupaten} onValueChange={setLocalKabupaten} disabled={!localCluster}>
                         <SelectTrigger>
                             <SelectValue placeholder="Kabupaten" />
                         </SelectTrigger>
@@ -248,7 +262,7 @@ export const Filter = () => {
 
             <div className="w-full max-w-md">
                 <Field>
-                    <Select value={localKecamatan} onValueChange={setLocalKecamatan}>
+                    <Select value={localKecamatan} onValueChange={setLocalKecamatan} disabled={!localKabupaten}>
                         <SelectTrigger>
                             <SelectValue placeholder="Kecamatan" />
                         </SelectTrigger>
@@ -293,11 +307,37 @@ export const Filter = () => {
 
             <div className="w-full max-w-md">
                 <Field>
+                    <DatePicker
+                        selected={localDate}
+                        onChange={(date) => setLocalDate(date)}
+                        dateFormat="yyyy-MM"
+                        showMonthYearPicker
+                        showFullMonthYearPicker
+                        placeholderText="Select Month/Year"
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                </Field>
+            </div>
+
+            <div className="w-full max-w-md">
+                <Field>
                     <Input
                         type="number"
                         placeholder="Rows Count e.g. 2000"
                         value={localRows}
-                        onChange={(e) => setLocalRows(e.target.value)}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            // Allow empty string or digits only
+                            if (value === '' || /^\d+$/.test(value)) {
+                                setLocalRows(value);
+                            }
+                        }}
+                        // Optional: prevent non-numeric keypresses
+                        onKeyPress={(e) => {
+                            if (!/[0-9]/.test(e.key)) {
+                                e.preventDefault();
+                            }
+                        }}
                         min="0"
                         step="1"
                         className="w-full"
@@ -305,7 +345,7 @@ export const Filter = () => {
                 </Field>
             </div>
 
-            <div className="flex gap-2 mt-auto">
+            <div className="flex gap-2 items-start">
                 <button
                     onClick={handleDownload}
                     disabled={isDownloading}

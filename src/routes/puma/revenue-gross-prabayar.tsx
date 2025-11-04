@@ -1,3 +1,4 @@
+import React from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -5,25 +6,11 @@ import {
     parseAsString,
     useQueryStates
 } from 'nuqs'
-import { format, subDays } from 'date-fns'
-import axios from "redaxios"
+import { format, subDays, parseISO, differenceInDays } from 'date-fns'
 
 import { client } from '@/lib/client'
 import { Filters } from './-components/filters'
 import { DataTable } from './-components/data-table'
-
-type Revenue = {
-    name: string | null;
-    targetAll: number;
-    revAll: number;
-    achTargetFmAll: string;
-    drrAll: string;
-    gapToTargetAll: number;
-    momAll: string;
-    revAllAbsolut: number;
-    yoyAll: string;
-    ytdAll: string;
-}
 
 const searchParams = {
     date: parseAsString.withDefault(format(subDays(new Date(), 2), 'yyyy-MM-dd')),
@@ -42,7 +29,29 @@ export const Route = createFileRoute('/puma/revenue-gross-prabayar')({
 })
 
 function RouteComponent() {
-    const [{ date, branch, subbranch, cluster, kabupaten }] = useQueryStates(searchParams)
+    const [{ date, branch, subbranch, cluster, kabupaten }, setStates] = useQueryStates(searchParams)
+
+    const { data: maxDateData, isLoading } = useQuery({
+        queryKey: ['max-date'],
+        queryFn: async () => {
+            const response = await client.api['max-date'].$get()
+
+            return await response.json()
+        },
+        staleTime: 5 * 60 * 1000,
+        retry: 1,
+        refetchOnWindowFocus: false
+    })
+
+    const defaultDate = React.useMemo(() => {
+        if (maxDateData?.tgl_gross) {
+            setStates({ date: maxDateData.tgl_gross })
+            return maxDateData.tgl_gross
+        }
+        return format(subDays(new Date(), 2), 'yyyy-MM-dd')
+    }, [maxDateData])
+
+    const daysBehind = differenceInDays(new Date(), parseISO(defaultDate))
 
     const { data, refetch, isFetching, error, isError } = useQuery({
         queryKey: ['revenue-gross', date, branch, subbranch, cluster, kabupaten],
@@ -61,7 +70,8 @@ function RouteComponent() {
 
             return await response.json()
         },
-        staleTime: 1000 * 60
+        staleTime: 1000 * 60,
+        refetchOnWindowFocus: false
     })
 
     if (isError) {
@@ -81,8 +91,8 @@ function RouteComponent() {
     return (
         <div className="px-4 lg:px-6">
             <div className="overflow-hidden min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/3 space-y-4">
-                <Filters daysBehind={2} />
-                <DataTable data={data} refetch={refetch} latestUpdatedData={2} title="Revenue Gross Prabayar" date={date} isLoading={isFetching} />
+                <Filters daysBehind={daysBehind} isLoading={isLoading} />
+                <DataTable data={data} refetch={refetch} latestUpdatedData={daysBehind} title="Revenue Gross Prabayar" date={date} isLoading={isFetching || isLoading} />
             </div>
         </div>
     )

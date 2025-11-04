@@ -10,7 +10,7 @@ import { territoryArea4 } from "@/db/schema/puma_2025";
 import { unionAll } from "drizzle-orm/mysql-core";
 
 const app = new Hono()
-    .get('/paying-los-all', zValidator('query', z.object({ date: z.coerce.date().optional(), branch: z.string().optional(), subbranch: z.string().optional(), cluster: z.string().optional(), kabupaten: z.string().optional() })),
+    .get('/paying-los-all', zValidator('query', z.object({ date: z.string().optional(), branch: z.string().optional(), subbranch: z.string().optional(), cluster: z.string().optional(), kabupaten: z.string().optional() })),
         async c => {
             const { date, branch, subbranch, cluster, kabupaten } = c.req.valid('query')
             const selectedDate = date ? new Date(date) : subDays(new Date(), 2)
@@ -835,7 +835,7 @@ const app = new Hono()
                 unionAll(revenueRegional, branchHeaderQuery, revenueBranch, subbranchHeaderQuery, revenueSubbranch, clusterHeaderQuery, revenueCluster, kabupatenHeaderQuery, revenueKabupaten)
             ])
 
-            return c.json({ data: finalDataRevenue }, 200)
+            return c.json(finalDataRevenue, 200)
         })
     .get('/paying-los-prabayar', zValidator('query', z.object({ date: z.coerce.date().optional() })),
         async c => {
@@ -1697,7 +1697,7 @@ const app = new Hono()
 
             return c.json({ data: finalDataRevenue }, 200)
         })
-    .get('/paying-subs', zValidator('query', z.object({ date: z.coerce.date().optional(), branch: z.string().optional(), subbranch: z.string().optional(), cluster: z.string().optional(), kabupaten: z.string().optional() })),
+    .get('/paying-subs', zValidator('query', z.object({ date: z.string().optional(), branch: z.string().optional(), subbranch: z.string().optional(), cluster: z.string().optional(), kabupaten: z.string().optional() })),
         async c => {
             const { date, branch, subbranch, cluster, kabupaten } = c.req.valid('query')
             const selectedDate = date ? new Date(date) : subDays(new Date(), 2)
@@ -2522,7 +2522,7 @@ const app = new Hono()
                 unionAll(revenueRegional, branchHeaderQuery, revenueBranch, subbranchHeaderQuery, revenueSubbranch, clusterHeaderQuery, revenueCluster, kabupatenHeaderQuery, revenueKabupaten)
             ])
 
-            return c.json({ data: finalDataRevenue }, 200)
+            return c.json(finalDataRevenue, 200)
         })
 
 export default app

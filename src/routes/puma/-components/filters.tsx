@@ -20,9 +20,10 @@ import { getBranches, getClusters, getKabupatens, getSubbranches } from "@/data/
 
 import { parseAsString, useQueryState } from 'nuqs';
 import { useMemo } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export const Filters = ({ daysBehind }: { daysBehind: number }) => {
-    const [date, setDate] = useQueryState('date', parseAsString.withDefault(format(subDays(new Date(), 2), 'yyyy-MM-dd')))
+export const Filters = ({ daysBehind, isLoading }: { daysBehind: number, isLoading?: boolean }) => {
+    const [date, setDate] = useQueryState('date', parseAsString.withDefault(format(subDays(new Date(), daysBehind), 'yyyy-MM-dd')))
     const [branch, setBranch] = useQueryState('branch', parseAsString.withDefault(''))
     const [subbranch, setSubbranch] = useQueryState('subbranch', parseAsString.withDefault(''))
     const [cluster, setCluster] = useQueryState('cluster', parseAsString.withDefault(''))
@@ -108,18 +109,18 @@ export const Filters = ({ daysBehind }: { daysBehind: number }) => {
         setDate(format(notNullDate, 'yyyy-MM-dd'))
     }
 
-    // if ( || !areas) {
-    //     return (
-    //         <div className='grid grid-cols-3 sm:grid-cols- md:grid-cols-4 lg:grid-cols-4 gap-4'>
-    //             {[1, 2, 3, 4].map((_, index) => (
-    //                 <div className='space-y-2' key={index}>
-    //                     <Skeleton className='h-4 w-10' />
-    //                     <Skeleton className='h-8 w-48' />
-    //                 </div>
-    //             ))}
-    //         </div>
-    //     )
-    // }
+    if (isLoading) {
+        return (
+            <div className='grid grid-cols-3 sm:grid-cols- md:grid-cols-4 lg:grid-cols-4 gap-4'>
+                {[1, 2, 3, 4].map((_, index) => (
+                    <div className='space-y-2' key={index}>
+                        <Skeleton className='h-4 w-10' />
+                        <Skeleton className='h-8 w-48' />
+                    </div>
+                ))}
+            </div>
+        )
+    }
 
     const renderMonthContent = (
         month: number,

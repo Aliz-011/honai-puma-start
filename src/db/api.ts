@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { logger } from 'hono/logger'
 import { cors } from 'hono/cors'
 import { Client, type SearchOptions } from 'ldapts'
+import { max, eq } from 'drizzle-orm'
 import * as z from 'zod'
 import { HTTPException } from "hono/http-exception";
 import { authHandler, initAuthConfig, verifyAuth } from '@hono/auth-js'
@@ -14,6 +15,10 @@ import newSales from "@/modules/new-sales"
 import cvm from "@/modules/cvm"
 import pv from "@/modules/pv"
 import so from '@/modules/so'
+import rgb from "@/modules/paying-subs"
+import { summaryBbCity, summaryRevAllByLosKabupaten, summaryRevAllKabupaten, summaryRgbHqKabupaten, summarySoAllKabupaten } from './schema/v_honai_puma'
+import { db } from '.'
+import { territoryArea4 } from './schema/puma_2025'
 
 const app = new Hono()
 
@@ -32,7 +37,8 @@ const loginSchema = z.object({
 
 app.use('*',
     initAuthConfig((c) => ({
-        secret: process.env.AUTH_SECRET,
+        secret: process.env.AUTH_SECRET!,
+        trustHost: true,
         providers: [
             Credentials({
                 name: 'LDAP',
@@ -66,6 +72,9 @@ app.use('*',
                         let firstName = "";
                         let lastName = "";
                         let email = '';
+
+                        console.log('AUTH_SECRET exists:', !!process.env.AUTH_SECRET)
+                        console.log('LDAP_URL:', process.env.LDAP_URL)
 
                         for (const ou of searchOus) {
                             const baseDn = `ou=${ou},${rootDn}`
@@ -117,7 +126,7 @@ app.use('*',
         ],
         session: {
             strategy: 'jwt',
-            maxAge: 1 * 24 * 60 * 60 // 1 days
+            maxAge: 3 * 60 * 60 // 3 Hours
         },
         callbacks: {
             async jwt({ token, user }) {
@@ -164,6 +173,79 @@ const routes = app
     .route('/', newSales)
     .route('/', pv)
     .route('/', so)
+    .route('/', rgb)
+    .get('/max-date', async (c) => {
+        const gross = db
+            .select({
+                regional: summaryRevAllKabupaten.regional,
+                tgl_gross: max(summaryRevAllKabupaten.tgl).as('tgl_gross')
+            })
+            .from(summaryRevAllKabupaten)
+            .groupBy(summaryRevAllKabupaten.regional)
+            .as('gross')
+
+        const ns = db
+            .select({
+                regional: summaryRevAllByLosKabupaten.regional,
+                tgl_ns: max(summaryRevAllByLosKabupaten.tgl).as('tgl_ns')
+            })
+            .from(summaryRevAllByLosKabupaten)
+            .groupBy(summaryRevAllByLosKabupaten.regional)
+            .as('ns')
+
+        const cvm = db
+            .select({
+                regional: summaryBbCity.regional,
+                tgl_cvm: max(summaryBbCity.tgl).as('tgl_cvm')
+            })
+            .from(summaryBbCity)
+            .groupBy(summaryBbCity.regional)
+            .as('cvm')
+
+        const rgb = db
+            .select({
+                regional: summaryRgbHqKabupaten.regional,
+                tgl_rgb: max(summaryRgbHqKabupaten.event_date).as('tgl_rgb')
+            })
+            .from(summaryRgbHqKabupaten)
+            .groupBy(summaryRgbHqKabupaten.regional)
+            .as('rgb')
+
+        const so = db
+            .select({
+                regional: summarySoAllKabupaten.regional,
+                tgl_so: max(summarySoAllKabupaten.tgl).as('tgl_so')
+            })
+            .from(summarySoAllKabupaten)
+            .groupBy(summarySoAllKabupaten.regional)
+            .as('so')
+
+        const regionalSubquery = db
+            .selectDistinct({
+                regional: territoryArea4.regional
+            })
+            .from(territoryArea4)
+            .where(eq(territoryArea4.regional, 'PUMA'))
+            .as('regional')
+
+        const [finalData] = await db
+            .select({
+                regional: regionalSubquery.regional,
+                tgl_gross: gross.tgl_gross,
+                tgl_ns: ns.tgl_ns,
+                tgl_cvm: cvm.tgl_cvm,
+                tgl_rgb: rgb.tgl_rgb,
+                tgl_so: so.tgl_so
+            })
+            .from(regionalSubquery)
+            .leftJoin(rgb, eq(regionalSubquery.regional, rgb.regional))
+            .leftJoin(gross, eq(regionalSubquery.regional, gross.regional))
+            .leftJoin(ns, eq(regionalSubquery.regional, ns.regional))
+            .leftJoin(cvm, eq(regionalSubquery.regional, cvm.regional))
+            .leftJoin(so, eq(regionalSubquery.regional, so.regional))
+
+        return c.json(finalData)
+    })
 
 export default app
 export type AppType = typeof routes;

@@ -84,10 +84,10 @@ const data = {
                     title: "Paying Subs All",
                     url: "/puma/paying-subs",
                 },
-                {
-                    title: "Paying LoS 0-1 All",
-                    url: "/puma/paying-los",
-                }
+                // {
+                //     title: "Paying LoS 0-1 All",
+                //     url: "/puma/paying-los",
+                // }
             ],
         },
         {
@@ -111,22 +111,22 @@ const data = {
             icon: PieChart,
             items: [
                 {
-                    title: "Revenue Redeem PV Prabyar",
+                    title: "Revenue Redeem PV All",
                     url: "/puma/revenue-redeem-pv",
                 }
             ],
         },
-        {
-            title: "Revenue SA",
-            url: "#",
-            icon: PieChart,
-            items: [
-                {
-                    title: "Revenue SA All",
-                    url: "/puma/revenue-sa",
-                },
-            ],
-        },
+        // {
+        //     title: "Revenue SA",
+        //     url: "#",
+        //     icon: PieChart,
+        //     items: [
+        //         {
+        //             title: "Revenue SA All",
+        //             url: "/puma/revenue-sa",
+        //         },
+        //     ],
+        // },
         {
             title: "Trx New Sales",
             url: "#",
