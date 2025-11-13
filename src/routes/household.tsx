@@ -8,6 +8,23 @@ import { Button } from '@/components/ui/button'
 
 export const Route = createFileRoute('/household')({
     component: RouteComponent,
+    head: () => ({
+        meta: [
+            {
+                name: 'description',
+                content: 'My App is a web application',
+            },
+            {
+                title: 'Household - Honai PUMA',
+            },
+        ],
+        links: [
+            {
+                rel: 'icon',
+                href: '/favicon.ico',
+            },
+        ],
+    }),
 })
 
 function RouteComponent() {

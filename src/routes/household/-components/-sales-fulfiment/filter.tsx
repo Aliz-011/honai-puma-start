@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import DatePicker from 'react-datepicker'
 import { Funnel } from 'lucide-react';
-import { format, getDaysInMonth, getMonth, getYear, subDays } from 'date-fns'
+import { format, subDays } from 'date-fns'
 import { parseAsString, useQueryState } from 'nuqs'
 
 import "react-datepicker/dist/react-datepicker.css";
@@ -19,7 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { getBranches, getWoks } from '@/data/territories';
 import { useMemo } from 'react';
 
-export const Filters = ({ daysBehind, disabled = false }: { daysBehind: number, disabled?: boolean }) => {
+export const Filter = ({ daysBehind, disabled = false }: { daysBehind: number, disabled?: boolean }) => {
     const [date, setDate] = useQueryState('date', parseAsString.withDefault(''))
     const [branch, setBranch] = useQueryState('branch', parseAsString.withDefault(''))
     const [wok, setWok] = useQueryState('wok', parseAsString.withDefault(''))
@@ -59,26 +59,9 @@ export const Filters = ({ daysBehind, disabled = false }: { daysBehind: number, 
         setWok(value);
     };
 
-
     const handleDateChange = (date: Date | null) => {
         const safeDate = date ?? new Date()
-        const selectedYear = getYear(safeDate);
-        const selectedMonth = getMonth(safeDate);
-
-        const today = new Date();
-        const currentMonth = today.getMonth();
-        const currentYear = today.getFullYear();
-
-        // Check if the selected month/year is the current month/year
-        if (selectedYear === currentYear && selectedMonth === currentMonth) {
-            // For current month: use current day minus daysBehind (can roll to previous month)
-            const targetDate = subDays(today, daysBehind);
-            setDate(format(targetDate, 'yyyy-MM-dd'));
-        } else {
-            // For any other month: use the last day of that month
-            const lastDayOfSelectedMonth = getDaysInMonth(safeDate);
-            setDate(format(new Date(selectedYear, selectedMonth, lastDayOfSelectedMonth), 'yyyy-MM-dd'));
-        }
+        setDate(format(safeDate, 'yyyy-MM-dd'));
     }
 
     if (isLoading || !branches) {

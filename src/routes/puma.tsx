@@ -7,6 +7,23 @@ import { useCurrentSession } from '@/hooks/use-current-session'
 
 export const Route = createFileRoute('/puma')({
   component: RouteComponent,
+  head: () => ({
+    meta: [
+      {
+        name: 'description',
+        content: 'My App is a web application',
+      },
+      {
+        title: 'Mobile - Honai PUMA',
+      },
+    ],
+    links: [
+      {
+        rel: 'icon',
+        href: '/favicon.ico',
+      },
+    ],
+  }),
 })
 
 function RouteComponent() {

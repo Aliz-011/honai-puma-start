@@ -17,10 +17,27 @@ const searchParams = {
 }
 
 export const Route = createFileRoute('/household/demands-deployment')({
-  component: RouteComponent,
   validateSearch: createStandardSchemaV1(searchParams, {
     partialOutput: true
-  })
+  }),
+  component: RouteComponent,
+  head: () => ({
+    meta: [
+      {
+        name: 'description',
+        content: 'My App is a web application',
+      },
+      {
+        title: 'Demands Deployment - Household',
+      },
+    ],
+    links: [
+      {
+        rel: 'icon',
+        href: '/favicon.ico',
+      },
+    ],
+  }),
 })
 
 function RouteComponent() {

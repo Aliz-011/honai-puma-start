@@ -11,6 +11,23 @@ import { AppSidebar } from './campaign/-components/app-sidebar'
 
 export const Route = createFileRoute('/campaign')({
     component: RouteComponent,
+    head: () => ({
+        meta: [
+            {
+                name: 'description',
+                content: 'My App is a web application',
+            },
+            {
+                title: 'Campaign - Honai PUMA',
+            },
+        ],
+        links: [
+            {
+                rel: 'icon',
+                href: '/favicon.ico',
+            },
+        ],
+    }),
 })
 
 function RouteComponent() {

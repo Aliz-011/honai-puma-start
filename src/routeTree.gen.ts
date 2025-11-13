@@ -32,6 +32,10 @@ import { Route as HouseholdSalesFulfilmentRouteImport } from './routes/household
 import { Route as HouseholdRevenueC3mrRouteImport } from './routes/household/revenue-c3mr'
 import { Route as HouseholdDemandsDeploymentRouteImport } from './routes/household/demands-deployment'
 import { Route as ApiSplatRouteImport } from './routes/api.$'
+import { Route as HouseholdConsolidationMobileHhRouteRouteImport } from './routes/household/consolidation-mobile-hh/route'
+import { Route as HouseholdConsolidationMobileHhRevBbRouteImport } from './routes/household/consolidation-mobile-hh/rev-bb'
+import { Route as HouseholdConsolidationMobileHhRevAllRouteImport } from './routes/household/consolidation-mobile-hh/rev-all'
+import { Route as HouseholdConsolidationMobileHhPayloadRouteImport } from './routes/household/consolidation-mobile-hh/payload'
 
 const PumaRoute = PumaRouteImport.update({
   id: '/puma',
@@ -152,6 +156,30 @@ const ApiSplatRoute = ApiSplatRouteImport.update({
   path: '/api/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HouseholdConsolidationMobileHhRouteRoute =
+  HouseholdConsolidationMobileHhRouteRouteImport.update({
+    id: '/consolidation-mobile-hh',
+    path: '/consolidation-mobile-hh',
+    getParentRoute: () => HouseholdRoute,
+  } as any)
+const HouseholdConsolidationMobileHhRevBbRoute =
+  HouseholdConsolidationMobileHhRevBbRouteImport.update({
+    id: '/rev-bb',
+    path: '/rev-bb',
+    getParentRoute: () => HouseholdConsolidationMobileHhRouteRoute,
+  } as any)
+const HouseholdConsolidationMobileHhRevAllRoute =
+  HouseholdConsolidationMobileHhRevAllRouteImport.update({
+    id: '/rev-all',
+    path: '/rev-all',
+    getParentRoute: () => HouseholdConsolidationMobileHhRouteRoute,
+  } as any)
+const HouseholdConsolidationMobileHhPayloadRoute =
+  HouseholdConsolidationMobileHhPayloadRouteImport.update({
+    id: '/payload',
+    path: '/payload',
+    getParentRoute: () => HouseholdConsolidationMobileHhRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -159,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/household': typeof HouseholdRouteWithChildren
   '/login': typeof LoginRoute
   '/puma': typeof PumaRouteWithChildren
+  '/household/consolidation-mobile-hh': typeof HouseholdConsolidationMobileHhRouteRouteWithChildren
   '/api/$': typeof ApiSplatRoute
   '/household/demands-deployment': typeof HouseholdDemandsDeploymentRoute
   '/household/revenue-c3mr': typeof HouseholdRevenueC3mrRoute
@@ -177,12 +206,16 @@ export interface FileRoutesByFullPath {
   '/puma/trx-new-sales-byu': typeof PumaTrxNewSalesByuRoute
   '/puma/trx-new-sales-prabayar': typeof PumaTrxNewSalesPrabayarRoute
   '/campaign/': typeof CampaignIndexRoute
+  '/household/consolidation-mobile-hh/payload': typeof HouseholdConsolidationMobileHhPayloadRoute
+  '/household/consolidation-mobile-hh/rev-all': typeof HouseholdConsolidationMobileHhRevAllRoute
+  '/household/consolidation-mobile-hh/rev-bb': typeof HouseholdConsolidationMobileHhRevBbRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/household': typeof HouseholdRouteWithChildren
   '/login': typeof LoginRoute
   '/puma': typeof PumaRouteWithChildren
+  '/household/consolidation-mobile-hh': typeof HouseholdConsolidationMobileHhRouteRouteWithChildren
   '/api/$': typeof ApiSplatRoute
   '/household/demands-deployment': typeof HouseholdDemandsDeploymentRoute
   '/household/revenue-c3mr': typeof HouseholdRevenueC3mrRoute
@@ -201,6 +234,9 @@ export interface FileRoutesByTo {
   '/puma/trx-new-sales-byu': typeof PumaTrxNewSalesByuRoute
   '/puma/trx-new-sales-prabayar': typeof PumaTrxNewSalesPrabayarRoute
   '/campaign': typeof CampaignIndexRoute
+  '/household/consolidation-mobile-hh/payload': typeof HouseholdConsolidationMobileHhPayloadRoute
+  '/household/consolidation-mobile-hh/rev-all': typeof HouseholdConsolidationMobileHhRevAllRoute
+  '/household/consolidation-mobile-hh/rev-bb': typeof HouseholdConsolidationMobileHhRevBbRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -209,6 +245,7 @@ export interface FileRoutesById {
   '/household': typeof HouseholdRouteWithChildren
   '/login': typeof LoginRoute
   '/puma': typeof PumaRouteWithChildren
+  '/household/consolidation-mobile-hh': typeof HouseholdConsolidationMobileHhRouteRouteWithChildren
   '/api/$': typeof ApiSplatRoute
   '/household/demands-deployment': typeof HouseholdDemandsDeploymentRoute
   '/household/revenue-c3mr': typeof HouseholdRevenueC3mrRoute
@@ -227,6 +264,9 @@ export interface FileRoutesById {
   '/puma/trx-new-sales-byu': typeof PumaTrxNewSalesByuRoute
   '/puma/trx-new-sales-prabayar': typeof PumaTrxNewSalesPrabayarRoute
   '/campaign/': typeof CampaignIndexRoute
+  '/household/consolidation-mobile-hh/payload': typeof HouseholdConsolidationMobileHhPayloadRoute
+  '/household/consolidation-mobile-hh/rev-all': typeof HouseholdConsolidationMobileHhRevAllRoute
+  '/household/consolidation-mobile-hh/rev-bb': typeof HouseholdConsolidationMobileHhRevBbRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -236,6 +276,7 @@ export interface FileRouteTypes {
     | '/household'
     | '/login'
     | '/puma'
+    | '/household/consolidation-mobile-hh'
     | '/api/$'
     | '/household/demands-deployment'
     | '/household/revenue-c3mr'
@@ -254,12 +295,16 @@ export interface FileRouteTypes {
     | '/puma/trx-new-sales-byu'
     | '/puma/trx-new-sales-prabayar'
     | '/campaign/'
+    | '/household/consolidation-mobile-hh/payload'
+    | '/household/consolidation-mobile-hh/rev-all'
+    | '/household/consolidation-mobile-hh/rev-bb'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/household'
     | '/login'
     | '/puma'
+    | '/household/consolidation-mobile-hh'
     | '/api/$'
     | '/household/demands-deployment'
     | '/household/revenue-c3mr'
@@ -278,6 +323,9 @@ export interface FileRouteTypes {
     | '/puma/trx-new-sales-byu'
     | '/puma/trx-new-sales-prabayar'
     | '/campaign'
+    | '/household/consolidation-mobile-hh/payload'
+    | '/household/consolidation-mobile-hh/rev-all'
+    | '/household/consolidation-mobile-hh/rev-bb'
   id:
     | '__root__'
     | '/'
@@ -285,6 +333,7 @@ export interface FileRouteTypes {
     | '/household'
     | '/login'
     | '/puma'
+    | '/household/consolidation-mobile-hh'
     | '/api/$'
     | '/household/demands-deployment'
     | '/household/revenue-c3mr'
@@ -303,6 +352,9 @@ export interface FileRouteTypes {
     | '/puma/trx-new-sales-byu'
     | '/puma/trx-new-sales-prabayar'
     | '/campaign/'
+    | '/household/consolidation-mobile-hh/payload'
+    | '/household/consolidation-mobile-hh/rev-all'
+    | '/household/consolidation-mobile-hh/rev-bb'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -477,6 +529,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/household/consolidation-mobile-hh': {
+      id: '/household/consolidation-mobile-hh'
+      path: '/consolidation-mobile-hh'
+      fullPath: '/household/consolidation-mobile-hh'
+      preLoaderRoute: typeof HouseholdConsolidationMobileHhRouteRouteImport
+      parentRoute: typeof HouseholdRoute
+    }
+    '/household/consolidation-mobile-hh/rev-bb': {
+      id: '/household/consolidation-mobile-hh/rev-bb'
+      path: '/rev-bb'
+      fullPath: '/household/consolidation-mobile-hh/rev-bb'
+      preLoaderRoute: typeof HouseholdConsolidationMobileHhRevBbRouteImport
+      parentRoute: typeof HouseholdConsolidationMobileHhRouteRoute
+    }
+    '/household/consolidation-mobile-hh/rev-all': {
+      id: '/household/consolidation-mobile-hh/rev-all'
+      path: '/rev-all'
+      fullPath: '/household/consolidation-mobile-hh/rev-all'
+      preLoaderRoute: typeof HouseholdConsolidationMobileHhRevAllRouteImport
+      parentRoute: typeof HouseholdConsolidationMobileHhRouteRoute
+    }
+    '/household/consolidation-mobile-hh/payload': {
+      id: '/household/consolidation-mobile-hh/payload'
+      path: '/payload'
+      fullPath: '/household/consolidation-mobile-hh/payload'
+      preLoaderRoute: typeof HouseholdConsolidationMobileHhPayloadRouteImport
+      parentRoute: typeof HouseholdConsolidationMobileHhRouteRoute
+    }
   }
 }
 
@@ -492,13 +572,37 @@ const CampaignRouteWithChildren = CampaignRoute._addFileChildren(
   CampaignRouteChildren,
 )
 
+interface HouseholdConsolidationMobileHhRouteRouteChildren {
+  HouseholdConsolidationMobileHhPayloadRoute: typeof HouseholdConsolidationMobileHhPayloadRoute
+  HouseholdConsolidationMobileHhRevAllRoute: typeof HouseholdConsolidationMobileHhRevAllRoute
+  HouseholdConsolidationMobileHhRevBbRoute: typeof HouseholdConsolidationMobileHhRevBbRoute
+}
+
+const HouseholdConsolidationMobileHhRouteRouteChildren: HouseholdConsolidationMobileHhRouteRouteChildren =
+  {
+    HouseholdConsolidationMobileHhPayloadRoute:
+      HouseholdConsolidationMobileHhPayloadRoute,
+    HouseholdConsolidationMobileHhRevAllRoute:
+      HouseholdConsolidationMobileHhRevAllRoute,
+    HouseholdConsolidationMobileHhRevBbRoute:
+      HouseholdConsolidationMobileHhRevBbRoute,
+  }
+
+const HouseholdConsolidationMobileHhRouteRouteWithChildren =
+  HouseholdConsolidationMobileHhRouteRoute._addFileChildren(
+    HouseholdConsolidationMobileHhRouteRouteChildren,
+  )
+
 interface HouseholdRouteChildren {
+  HouseholdConsolidationMobileHhRouteRoute: typeof HouseholdConsolidationMobileHhRouteRouteWithChildren
   HouseholdDemandsDeploymentRoute: typeof HouseholdDemandsDeploymentRoute
   HouseholdRevenueC3mrRoute: typeof HouseholdRevenueC3mrRoute
   HouseholdSalesFulfilmentRoute: typeof HouseholdSalesFulfilmentRoute
 }
 
 const HouseholdRouteChildren: HouseholdRouteChildren = {
+  HouseholdConsolidationMobileHhRouteRoute:
+    HouseholdConsolidationMobileHhRouteRouteWithChildren,
   HouseholdDemandsDeploymentRoute: HouseholdDemandsDeploymentRoute,
   HouseholdRevenueC3mrRoute: HouseholdRevenueC3mrRoute,
   HouseholdSalesFulfilmentRoute: HouseholdSalesFulfilmentRoute,

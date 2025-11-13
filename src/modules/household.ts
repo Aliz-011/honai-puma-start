@@ -1,4 +1,4 @@
-import { endOfMonth, format, getDaysInMonth, subDays, subMonths, subYears, startOfMonth } from "date-fns";
+import { endOfMonth, format, getDaysInMonth, subDays, subMonths, subYears, startOfMonth, parseISO } from "date-fns";
 import { and, count, eq, inArray, or, sql, sum, isNotNull, getTableColumns, notInArray, gt } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod"
@@ -14,7 +14,7 @@ const app = new Hono()
     .get('/io-re-ps', zValidator('query', z.object({ date: z.string().optional(), branch: z.string().optional(), wok: z.string().optional() })),
         async c => {
             const { date, branch, wok } = c.req.valid('query')
-            const selectedDate = date ? new Date(date) : subDays(new Date(), 1)
+            const selectedDate = date ? parseISO(date) : subDays(new Date(), 1)
 
             const currMonth = format(selectedDate, 'MM')
             const currYear = format(selectedDate, 'yyyy')
@@ -122,7 +122,7 @@ const app = new Hono()
                 .leftJoin(ih_information_odp, eq(ihOrderingDetailOrder.service_id, ih_information_odp.service_number))
                 .leftJoin(ih_occ_golive_ihld, eq(ih_information_odp.odp_name, ih_occ_golive_ihld.odp_name))
                 .where(and(
-                    or(eq(ihOrderingDetailOrder.region, 'MALUKU DAN PAPUA'), eq(ih_occ_golive_ihld.telkomsel_regional, 'PUMA')),
+                    eq(ih_occ_golive_ihld.telkomsel_regional, 'MALUKU DAN PAPUA'),
                     isNotNull(ihOrderingDetailOrder.ps_ts),
                     sql`DATE_FORMAT(${ihOrderingDetailOrder.ps_ts}, '%Y-%m-%d') BETWEEN ${currStartOfMonth} AND ${currDate}`
                 ))
@@ -419,12 +419,11 @@ const app = new Hono()
                 .leftJoin(ih_information_odp, eq(ihOrderingDetailOrder.service_id, ih_information_odp.service_number))
                 .leftJoin(ih_occ_golive_ihld, eq(ih_information_odp.odp_name, ih_occ_golive_ihld.odp_name))
                 .where(and(
-                    or(eq(ihOrderingDetailOrder.region, 'MALUKU DAN PAPUA'), eq(ih_occ_golive_ihld.telkomsel_regional, 'PUMA')),
+                    eq(ih_occ_golive_ihld.telkomsel_regional, 'MALUKU DAN PAPUA'),
                     isNotNull(ihOrderingDetailOrder.ps_ts),
                     sql`DATE_FORMAT(${ihOrderingDetailOrder.ps_ts}, '%Y-%m-%d') BETWEEN ${currStartOfMonth} AND ${currDate}`
-                    // sql`DATE_FORMAT(${ihOrderingDetailOrder.ps_ts}, '%Y-%m-%d') = ${currDate}`
                 ))
-                .groupBy(sql`1`)
+                .groupBy(ihOrderingDetailOrder.branch)
                 .as('e')
 
             const branchDeduplicatedData = db
@@ -739,10 +738,9 @@ const app = new Hono()
                 .leftJoin(ih_information_odp, eq(ihOrderingDetailOrder.service_id, ih_information_odp.service_number))
                 .leftJoin(ih_occ_golive_ihld, eq(ih_information_odp.odp_name, ih_occ_golive_ihld.odp_name))
                 .where(and(
-                    or(eq(ihOrderingDetailOrder.region, 'MALUKU DAN PAPUA'), eq(ih_occ_golive_ihld.telkomsel_regional, 'PUMA')),
+                    eq(ih_occ_golive_ihld.telkomsel_regional, 'MALUKU DAN PAPUA'),
                     isNotNull(ihOrderingDetailOrder.ps_ts),
                     sql`DATE_FORMAT(${ihOrderingDetailOrder.ps_ts}, '%Y-%m-%d') BETWEEN ${currStartOfMonth} AND ${currDate}`
-                    // sql`DATE_FORMAT(${ihOrderingDetailOrder.ps_ts}, '%Y-%m-%d') = ${currDate}`
                 ))
                 .groupBy(sql`1`)
                 .as('e')
@@ -970,7 +968,7 @@ const app = new Hono()
     .get('/demands-deployment', zValidator('query', z.object({ date: z.string().optional(), branch: z.string().optional(), wok: z.string().optional() })),
         async c => {
             const { date, branch, wok } = c.req.valid('query')
-            const selectedDate = date ? new Date(date) : subDays(new Date(), 2)
+            const selectedDate = date ? parseISO(date) : subDays(new Date(), 2)
 
             const currMonth = format(selectedDate, 'MM')
             const currYear = format(selectedDate, 'yyyy')
@@ -1219,7 +1217,7 @@ const app = new Hono()
                         amount_port_all_mo_y1: sql<number>`SUM(CASE WHEN YEAR(tanggal_go_live_uim) = ${prevYear} THEN is_total END)`.as('amount_port_all_mo_y1'),
                     })
                     .from(ih_occ_golive_ihld)
-                    .where(eq(ih_occ_golive_ihld.telkomsel_regional, 'PUMA'))
+                    .where(eq(ih_occ_golive_ihld.telkomsel_regional, 'MALUKU DAN PAPUA'))
                     .groupBy(sql`1`)
                     .as('ff')
                 )
@@ -1595,7 +1593,7 @@ const app = new Hono()
                         amount_port_all_mo_y1: sql<number>`SUM(CASE WHEN YEAR(tanggal_go_live_uim) = ${prevYear} THEN is_total END)`.as('amount_port_all_mo_y1'),
                     })
                     .from(ih_occ_golive_ihld)
-                    .where(eq(ih_occ_golive_ihld.telkomsel_regional, 'PUMA'))
+                    .where(eq(ih_occ_golive_ihld.telkomsel_regional, 'MALUKU DAN PAPUA'))
                     .groupBy(sql`1`)
                     .as('ff')
                 )
@@ -1985,7 +1983,7 @@ const app = new Hono()
                     })
                     .from(ih_occ_golive_ihld)
                     .where(and(
-                        eq(ih_occ_golive_ihld.telkomsel_regional, 'PUMA'),
+                        eq(ih_occ_golive_ihld.telkomsel_regional, 'MALUKU DAN PAPUA'),
                         sql`YEAR(tanggal_go_live_uim) = ${currYear}`
                     ))
                     .groupBy(sql`1`)
@@ -2155,7 +2153,7 @@ const app = new Hono()
     .get('/demands-deployment-v2', zValidator('query', z.object({ date: z.string().optional(), branch: z.string().optional(), wok: z.string().optional() })),
         async c => {
             const { date, branch, wok } = c.req.valid('query')
-            const selectedDate = date ? new Date(date) : subDays(new Date(), 2)
+            const selectedDate = date ? parseISO(date) : subDays(new Date(), 2)
 
             const currMonth = format(selectedDate, 'MM')
             const currYear = format(selectedDate, 'yyyy')
@@ -2366,7 +2364,7 @@ const app = new Hono()
     .get('/sf-class', zValidator('query', z.object({ date: z.string().optional(), branch: z.string().optional(), wok: z.string().optional() })),
         async c => {
             const { date, branch, wok } = c.req.valid('query')
-            const selectedDate = date ? new Date(date) : subDays(new Date(), 2)
+            const selectedDate = date ? parseISO(date) : subDays(new Date(), 2)
 
             const currMonth = format(selectedDate, 'MM')
             const currYear = format(selectedDate, 'yyyy')
@@ -2552,7 +2550,7 @@ const app = new Hono()
     .get('/revenue-c3mr', zValidator('query', z.object({ date: z.string().optional(), branch: z.string().optional(), wok: z.string().optional() })),
         async c => {
             const { date, branch, wok } = c.req.valid('query')
-            const selectedDate = date ? new Date(date) : subDays(new Date(), 2)
+            const selectedDate = date ? parseISO(date) : subDays(new Date(), 2)
 
             const currMonth = format(selectedDate, 'MM')
             const currYear = format(selectedDate, 'yyyy')
@@ -2857,7 +2855,7 @@ const app = new Hono()
     .get('/revenue-c3mr-v2', zValidator('query', z.object({ date: z.string().optional(), branch: z.string().optional(), wok: z.string().optional() })),
         async c => {
             const { date, branch, wok } = c.req.valid('query')
-            const selectedDate = date ? new Date(date) : subDays(new Date(), 2)
+            const selectedDate = date ? parseISO(date) : subDays(new Date(), 2)
 
             const currMonth = format(selectedDate, 'MM')
             const currYear = format(selectedDate, 'yyyy')
@@ -2993,7 +2991,7 @@ const app = new Hono()
         })
     .get('/consolidation-all', zValidator('query', z.object({ date: z.string().optional(), branch: z.string().optional(), cluster: z.string().optional(), kabupaten: z.string().optional() })), async c => {
         const { date, branch, cluster, kabupaten } = c.req.valid('query')
-        const selectedDate = date ? new Date(date) : subDays(new Date(), 2)
+        const selectedDate = date ? parseISO(date) : subDays(new Date(), 2)
 
         const endOfCurrMonth = endOfMonth(selectedDate);
         console.log({ selectedDate: format(endOfCurrMonth, 'yyyy-MM-dd') });
@@ -3195,11 +3193,11 @@ const app = new Hono()
             unionAll(summaryBranch, clusterHeader, summaryCluster, kabupatenHeader, summaryKabupaten)
         ])
 
-        return c.json({ data: finalDataRevenue }, 200)
+        return c.json(finalDataRevenue, 200)
     })
     .get('/consolidation-bb', zValidator('query', z.object({ date: z.string().optional(), branch: z.string().optional(), cluster: z.string().optional(), kabupaten: z.string().optional() })), async c => {
         const { date, branch, cluster, kabupaten } = c.req.valid('query')
-        const selectedDate = date ? new Date(date) : subDays(new Date(), 2)
+        const selectedDate = date ? parseISO(date) : subDays(new Date(), 2)
 
         const currMonth = format(selectedDate, 'MM')
         const currYear = format(selectedDate, 'yyyy')
@@ -3225,12 +3223,12 @@ const app = new Hono()
         const summaryBranch = db
             .select({
                 territory: branchTerritory.branch,
-                rev_bb_m: sum(branchRevenue.rev_bb_m).as('rev_bb_m'),
-                rev_bb_m1: sum(branchRevenue.rev_bb_m1).as('rev_bb_m1'),
-                rev_bb_mom: branchRevenue.rev_bb_mom,
-                rev_bb_y: sum(branchRevenue.rev_bb_y).as('rev_bb_y'),
-                rev_bb_y1: sum(branchRevenue.rev_bb_y1).as('rev_bb_y1'),
-                rev_bb_ytd: branchRevenue.rev_bb_ytd,
+                rev_all_m: sum(branchRevenue.rev_bb_m).as('rev_bb_m'),
+                rev_all_m1: sum(branchRevenue.rev_bb_m1).as('rev_bb_m1'),
+                rev_all_mom: branchRevenue.rev_bb_mom,
+                rev_all_y: sum(branchRevenue.rev_bb_y).as('rev_bb_y'),
+                rev_all_y1: sum(branchRevenue.rev_bb_y1).as('rev_bb_y1'),
+                rev_all_ytd: branchRevenue.rev_bb_ytd,
                 rev_fix_m: sum(branchRevenue.rev_fix_m).as('rev_fix_m'),
                 rev_fix_m1: sum(branchRevenue.rev_fix_m1).as('rev_fix_m1'),
                 rev_fix_mom: branchRevenue.rev_fix_mom,
@@ -3251,12 +3249,12 @@ const app = new Hono()
         const clusterHeader = db
             .selectDistinct({
                 territory: sql<string>`'CLUSTER'`.as('territory'),
-                rev_bb_m: sql<string>`''`.as('rev_bb_m'),
-                rev_bb_m1: sql<string>`''`.as('rev_bb_m1'),
-                rev_bb_mom: sql<string>`''`.as('rev_bb_mom'),
-                rev_bb_y: sql<string>`''`.as('rev_bb_y'),
-                rev_bb_y1: sql<string>`''`.as('rev_bb_y1'),
-                rev_bb_ytd: sql<string>`''`.as('rev_bb_ytd'),
+                rev_all_m: sql<string>`''`.as('rev_bb_m'),
+                rev_all_m1: sql<string>`''`.as('rev_bb_m1'),
+                rev_all_mom: sql<string>`''`.as('rev_bb_mom'),
+                rev_all_y: sql<string>`''`.as('rev_bb_y'),
+                rev_all_y1: sql<string>`''`.as('rev_bb_y1'),
+                rev_all_ytd: sql<string>`''`.as('rev_bb_ytd'),
                 rev_fix_m: sql<string>`''`.as('rev_fix_m'),
                 rev_fix_m1: sql<string>`''`.as('rev_fix_m1'),
                 rev_fix_mom: sql<string>`''`.as('rev_fix_mom'),
@@ -3298,12 +3296,12 @@ const app = new Hono()
         const summaryCluster = db
             .select({
                 territory: clusterTerritory.cluster,
-                rev_bb_m: sum(clusterRevenue.rev_bb_m).as('rev_bb_m'),
-                rev_bb_m1: sum(clusterRevenue.rev_bb_m1).as('rev_bb_m1'),
-                rev_bb_mom: clusterRevenue.rev_bb_mom,
-                rev_bb_y: sum(clusterRevenue.rev_bb_y).as('rev_bb_y'),
-                rev_bb_y1: sum(clusterRevenue.rev_bb_y1).as('rev_bb_y1'),
-                rev_bb_ytd: clusterRevenue.rev_bb_ytd,
+                rev_all_m: sum(clusterRevenue.rev_bb_m).as('rev_bb_m'),
+                rev_all_m1: sum(clusterRevenue.rev_bb_m1).as('rev_bb_m1'),
+                rev_all_mom: clusterRevenue.rev_bb_mom,
+                rev_all_y: sum(clusterRevenue.rev_bb_y).as('rev_bb_y'),
+                rev_all_y1: sum(clusterRevenue.rev_bb_y1).as('rev_bb_y1'),
+                rev_all_ytd: clusterRevenue.rev_bb_ytd,
                 rev_fix_m: sum(clusterRevenue.rev_fix_m).as('rev_fix_m'),
                 rev_fix_m1: sum(clusterRevenue.rev_fix_m1).as('rev_fix_m1'),
                 rev_fix_mom: clusterRevenue.rev_fix_mom,
@@ -3324,12 +3322,12 @@ const app = new Hono()
         const kabupatenHeader = db
             .selectDistinct({
                 territory: sql<string>`'KABUPATEN'`.as('territory'),
-                rev_bb_m: sql<string>`''`.as('rev_bb_m'),
-                rev_bb_m1: sql<string>`''`.as('rev_bb_m1'),
-                rev_bb_mom: sql<string>`''`.as('rev_bb_mom'),
-                rev_bb_y: sql<string>`''`.as('rev_bb_y'),
-                rev_bb_y1: sql<string>`''`.as('rev_bb_y1'),
-                rev_bb_ytd: sql<string>`''`.as('rev_bb_ytd'),
+                rev_all_m: sql<string>`''`.as('rev_bb_m'),
+                rev_all_m1: sql<string>`''`.as('rev_bb_m1'),
+                rev_all_mom: sql<string>`''`.as('rev_bb_mom'),
+                rev_all_y: sql<string>`''`.as('rev_bb_y'),
+                rev_all_y1: sql<string>`''`.as('rev_bb_y1'),
+                rev_all_ytd: sql<string>`''`.as('rev_bb_ytd'),
                 rev_fix_m: sql<string>`''`.as('rev_fix_m'),
                 rev_fix_m1: sql<string>`''`.as('rev_fix_m1'),
                 rev_fix_mom: sql<string>`''`.as('rev_fix_mom'),
@@ -3376,12 +3374,12 @@ const app = new Hono()
         const summaryKabupaten = db
             .select({
                 territory: kabupatenTerritory.kabupaten,
-                rev_bb_m: sum(kabupatenRevenue.rev_bb_m).as('rev_bb_m'),
-                rev_bb_m1: sum(kabupatenRevenue.rev_bb_m1).as('rev_bb_m1'),
-                rev_bb_mom: kabupatenRevenue.rev_bb_mom,
-                rev_bb_y: sum(kabupatenRevenue.rev_bb_y).as('rev_bb_y'),
-                rev_bb_y1: sum(kabupatenRevenue.rev_bb_y1).as('rev_bb_y1'),
-                rev_bb_ytd: kabupatenRevenue.rev_bb_ytd,
+                rev_all_m: sum(kabupatenRevenue.rev_bb_m).as('rev_bb_m'),
+                rev_all_m1: sum(kabupatenRevenue.rev_bb_m1).as('rev_bb_m1'),
+                rev_all_mom: kabupatenRevenue.rev_bb_mom,
+                rev_all_y: sum(kabupatenRevenue.rev_bb_y).as('rev_bb_y'),
+                rev_all_y1: sum(kabupatenRevenue.rev_bb_y1).as('rev_bb_y1'),
+                rev_all_ytd: kabupatenRevenue.rev_bb_ytd,
                 rev_fix_m: sum(kabupatenRevenue.rev_fix_m).as('rev_fix_m'),
                 rev_fix_m1: sum(kabupatenRevenue.rev_fix_m1).as('rev_fix_m1'),
                 rev_fix_mom: kabupatenRevenue.rev_fix_mom,
@@ -3403,11 +3401,11 @@ const app = new Hono()
             unionAll(summaryBranch, clusterHeader, summaryCluster, kabupatenHeader, summaryKabupaten)
         ])
 
-        return c.json({ data: finalDataRevenue }, 200)
+        return c.json(finalDataRevenue, 200)
     })
     .get('/consolidation-payload', zValidator('query', z.object({ date: z.string().optional(), branch: z.string().optional(), cluster: z.string().optional(), kabupaten: z.string().optional() })), async c => {
         const { date, branch, cluster, kabupaten } = c.req.valid('query')
-        const selectedDate = date ? new Date(date) : subDays(new Date(), 2)
+        const selectedDate = date ? parseISO(date) : subDays(new Date(), 2)
 
         const currMonth = format(selectedDate, 'MM')
         const currYear = format(selectedDate, 'yyyy')
@@ -3433,18 +3431,18 @@ const app = new Hono()
         const summaryBranch = db
             .select({
                 territory: branchTerritory.branch,
-                payload_mobile_m: sum(branchRevenue.payload_mobile_m).as('payload_mobile_m'),
-                payload_mobile_m1: sum(branchRevenue.payload_mobile_m1).as('payload_mobile_m1'),
-                payload_mobile_mom: branchRevenue.payload_mobile_mom,
-                payload_mobile_y: sum(branchRevenue.payload_mobile_y).as('payload_mobile_y'),
-                payload_mobile_y1: sum(branchRevenue.payload_mobile_y1).as('payload_mobile_y1'),
-                payload_mobile_ytd: branchRevenue.payload_mobile_ytd,
-                payload_fix_m: sum(branchRevenue.payload_fix_m).as('payload_fix_m'),
-                payload_fix_m1: sum(branchRevenue.payload_fix_m1).as('payload_fix_m1'),
-                payload_fix_mom: branchRevenue.payload_fix_mom,
-                payload_fix_y: sum(branchRevenue.payload_fix_y).as("payload_fix_y"),
-                payload_fix_y1: sum(branchRevenue.payload_fix_y1).as("payload_fix_y1"),
-                payload_fix_ytd: branchRevenue.payload_fix_ytd,
+                rev_all_m: sum(branchRevenue.payload_mobile_m).as('payload_mobile_m'),
+                rev_all_m1: sum(branchRevenue.payload_mobile_m1).as('payload_mobile_m1'),
+                rev_all_mom: branchRevenue.payload_mobile_mom,
+                rev_all_y: sum(branchRevenue.payload_mobile_y).as('payload_mobile_y'),
+                rev_all_y1: sum(branchRevenue.payload_mobile_y1).as('payload_mobile_y1'),
+                rev_all_ytd: branchRevenue.payload_mobile_ytd,
+                rev_fix_m: sum(branchRevenue.payload_fix_m).as('payload_fix_m'),
+                rev_fix_m1: sum(branchRevenue.payload_fix_m1).as('payload_fix_m1'),
+                rev_fix_mom: branchRevenue.payload_fix_mom,
+                rev_fix_y: sum(branchRevenue.payload_fix_y).as("payload_fix_y"),
+                rev_fix_y1: sum(branchRevenue.payload_fix_y1).as("payload_fix_y1"),
+                rev_fix_ytd: branchRevenue.payload_fix_ytd,
                 cons_m: sum(branchRevenue.consolidation_m).as('consolidation_m'),
                 cons_m1: sum(branchRevenue.consolidation_m1).as('consolidation_m1'),
                 cons_mom: branchRevenue.consolidation_mom,
@@ -3459,18 +3457,18 @@ const app = new Hono()
         const clusterHeader = db
             .selectDistinct({
                 territory: sql<string>`'CLUSTER'`.as('territory'),
-                payload_mobile_m: sql<string>`''`.as('payload_mobile_m'),
-                payload_mobile_m1: sql<string>`''`.as('payload_mobile_m1'),
-                payload_mobile_mom: sql<string>`''`.as('payload_mobile_mom'),
-                payload_mobile_y: sql<string>`''`.as('payload_mobile_y'),
-                payload_mobile_y1: sql<string>`''`.as('payload_mobile_y1'),
-                payload_mobile_ytd: sql<string>`''`.as('payload_mobile_ytd'),
-                payload_fix_m: sql<string>`''`.as('payload_fix_m'),
-                payload_fix_m1: sql<string>`''`.as('payload_fix_m1'),
-                payload_fix_mom: sql<string>`''`.as('payload_fix_mom'),
-                payload_fix_y: sql<string>`''`.as('payload_fix_y'),
-                payload_fix_y1: sql<string>`''`.as('payload_fix_y1'),
-                payload_fix_ytd: sql<string>`''`.as('payload_fix_ytd'),
+                rev_all_m: sql<string>`''`.as('payload_mobile_m'),
+                rev_all_m1: sql<string>`''`.as('payload_mobile_m1'),
+                rev_all_mom: sql<string>`''`.as('payload_mobile_mom'),
+                rev_all_y: sql<string>`''`.as('payload_mobile_y'),
+                rev_all_y1: sql<string>`''`.as('payload_mobile_y1'),
+                rev_all_ytd: sql<string>`''`.as('payload_mobile_ytd'),
+                rev_fix_m: sql<string>`''`.as('payload_fix_m'),
+                rev_fix_m1: sql<string>`''`.as('payload_fix_m1'),
+                rev_fix_mom: sql<string>`''`.as('payload_fix_mom'),
+                rev_fix_y: sql<string>`''`.as('payload_fix_y'),
+                rev_fix_y1: sql<string>`''`.as('payload_fix_y1'),
+                rev_fix_ytd: sql<string>`''`.as('payload_fix_ytd'),
                 cons_m: sql<string>`''`.as('cons_m'),
                 cons_m1: sql<string>`''`.as('cons_m1'),
                 cons_mom: sql<string>`''`.as('cons_mom'),
@@ -3506,18 +3504,18 @@ const app = new Hono()
         const summaryCluster = db
             .select({
                 territory: clusterTerritory.cluster,
-                payload_mobile_m: sum(clusterRevenue.payload_mobile_m).as('payload_mobile_m'),
-                payload_mobile_m1: sum(clusterRevenue.payload_mobile_m1).as('payload_mobile_m1'),
-                payload_mobile_mom: clusterRevenue.payload_mobile_mom,
-                payload_mobile_y: sum(clusterRevenue.payload_mobile_y).as('payload_mobile_y'),
-                payload_mobile_y1: sum(clusterRevenue.payload_mobile_y1).as('payload_mobile_y1'),
-                payload_mobile_ytd: clusterRevenue.payload_mobile_ytd,
-                payload_fix_m: sum(clusterRevenue.payload_fix_m).as('payload_fix_m'),
-                payload_fix_m1: sum(clusterRevenue.payload_fix_m1).as('payload_fix_m1'),
-                payload_fix_mom: clusterRevenue.payload_fix_mom,
-                payload_fix_y: sum(clusterRevenue.payload_fix_y).as("payload_fix_y"),
-                payload_fix_y1: sum(clusterRevenue.payload_fix_y1).as("payload_fix_y1"),
-                payload_fix_ytd: clusterRevenue.payload_fix_ytd,
+                rev_all_m: sum(clusterRevenue.payload_mobile_m).as('payload_mobile_m'),
+                rev_all_m1: sum(clusterRevenue.payload_mobile_m1).as('payload_mobile_m1'),
+                rev_all_mom: clusterRevenue.payload_mobile_mom,
+                rev_all_y: sum(clusterRevenue.payload_mobile_y).as('payload_mobile_y'),
+                rev_all_y1: sum(clusterRevenue.payload_mobile_y1).as('payload_mobile_y1'),
+                rev_all_ytd: clusterRevenue.payload_mobile_ytd,
+                rev_fix_m: sum(clusterRevenue.payload_fix_m).as('payload_fix_m'),
+                rev_fix_m1: sum(clusterRevenue.payload_fix_m1).as('payload_fix_m1'),
+                rev_fix_mom: clusterRevenue.payload_fix_mom,
+                rev_fix_y: sum(clusterRevenue.payload_fix_y).as("payload_fix_y"),
+                rev_fix_y1: sum(clusterRevenue.payload_fix_y1).as("payload_fix_y1"),
+                rev_fix_ytd: clusterRevenue.payload_fix_ytd,
                 cons_m: sum(clusterRevenue.consolidation_m).as('consolidation_m'),
                 cons_m1: sum(clusterRevenue.consolidation_m1).as('consolidation_m1'),
                 cons_mom: clusterRevenue.consolidation_mom,
@@ -3532,18 +3530,18 @@ const app = new Hono()
         const kabupatenHeader = db
             .selectDistinct({
                 territory: sql<string>`'KABUPATEN'`.as('territory'),
-                payload_mobile_m: sql<string>`''`.as('payload_mobile_m'),
-                payload_mobile_m1: sql<string>`''`.as('payload_mobile_m1'),
-                payload_mobile_mom: sql<string>`''`.as('payload_mobile_mom'),
-                payload_mobile_y: sql<string>`''`.as('payload_mobile_y'),
-                payload_mobile_y1: sql<string>`''`.as('payload_mobile_y1'),
-                payload_mobile_ytd: sql<string>`''`.as('payload_mobile_ytd'),
-                payload_fix_m: sql<string>`''`.as('payload_fix_m'),
-                payload_fix_m1: sql<string>`''`.as('payload_fix_m1'),
-                payload_fix_mom: sql<string>`''`.as('payload_fix_mom'),
-                payload_fix_y: sql<string>`''`.as('payload_fix_y'),
-                payload_fix_y1: sql<string>`''`.as('payload_fix_y1'),
-                payload_fix_ytd: sql<string>`''`.as('payload_fix_ytd'),
+                rev_all_m: sql<string>`''`.as('payload_mobile_m'),
+                rev_all_m1: sql<string>`''`.as('payload_mobile_m1'),
+                rev_all_mom: sql<string>`''`.as('payload_mobile_mom'),
+                rev_all_y: sql<string>`''`.as('payload_mobile_y'),
+                rev_all_y1: sql<string>`''`.as('payload_mobile_y1'),
+                rev_all_ytd: sql<string>`''`.as('payload_mobile_ytd'),
+                rev_fix_m: sql<string>`''`.as('payload_fix_m'),
+                rev_fix_m1: sql<string>`''`.as('payload_fix_m1'),
+                rev_fix_mom: sql<string>`''`.as('payload_fix_mom'),
+                rev_fix_y: sql<string>`''`.as('payload_fix_y'),
+                rev_fix_y1: sql<string>`''`.as('payload_fix_y1'),
+                rev_fix_ytd: sql<string>`''`.as('payload_fix_ytd'),
                 cons_m: sql<string>`''`.as('cons_m'),
                 cons_m1: sql<string>`''`.as('cons_m1'),
                 cons_mom: sql<string>`''`.as('cons_mom'),
@@ -3584,18 +3582,18 @@ const app = new Hono()
         const summaryKabupaten = db
             .select({
                 territory: kabupatenTerritory.kabupaten,
-                payload_mobile_m: sum(kabupatenRevenue.payload_mobile_m).as('payload_mobile_m'),
-                payload_mobile_m1: sum(kabupatenRevenue.payload_mobile_m1).as('payload_mobile_m1'),
-                payload_mobile_mom: kabupatenRevenue.payload_mobile_mom,
-                payload_mobile_y: sum(kabupatenRevenue.payload_mobile_y).as('payload_mobile_y'),
-                payload_mobile_y1: sum(kabupatenRevenue.payload_mobile_y1).as('payload_mobile_y1'),
-                payload_mobile_ytd: kabupatenRevenue.payload_mobile_ytd,
-                payload_fix_m: sum(kabupatenRevenue.payload_fix_m).as('payload_fix_m'),
-                payload_fix_m1: sum(kabupatenRevenue.payload_fix_m1).as('payload_fix_m1'),
-                payload_fix_mom: kabupatenRevenue.payload_fix_mom,
-                payload_fix_y: sum(kabupatenRevenue.payload_fix_y).as("payload_fix_y"),
-                payload_fix_y1: sum(kabupatenRevenue.payload_fix_y1).as("payload_fix_y1"),
-                payload_fix_ytd: kabupatenRevenue.payload_fix_ytd,
+                rev_all_m: sum(kabupatenRevenue.payload_mobile_m).as('payload_mobile_m'),
+                rev_all_m1: sum(kabupatenRevenue.payload_mobile_m1).as('payload_mobile_m1'),
+                rev_all_mom: kabupatenRevenue.payload_mobile_mom,
+                rev_all_y: sum(kabupatenRevenue.payload_mobile_y).as('payload_mobile_y'),
+                rev_all_y1: sum(kabupatenRevenue.payload_mobile_y1).as('payload_mobile_y1'),
+                rev_all_ytd: kabupatenRevenue.payload_mobile_ytd,
+                rev_fix_m: sum(kabupatenRevenue.payload_fix_m).as('payload_fix_m'),
+                rev_fix_m1: sum(kabupatenRevenue.payload_fix_m1).as('payload_fix_m1'),
+                rev_fix_mom: kabupatenRevenue.payload_fix_mom,
+                rev_fix_y: sum(kabupatenRevenue.payload_fix_y).as("payload_fix_y"),
+                rev_fix_y1: sum(kabupatenRevenue.payload_fix_y1).as("payload_fix_y1"),
+                rev_fix_ytd: kabupatenRevenue.payload_fix_ytd,
                 cons_m: sum(kabupatenRevenue.consolidation_m).as('consolidation_m'),
                 cons_m1: sum(kabupatenRevenue.consolidation_m1).as('consolidation_m1'),
                 cons_mom: kabupatenRevenue.consolidation_mom,
@@ -3611,7 +3609,7 @@ const app = new Hono()
             unionAll(summaryBranch, clusterHeader, summaryCluster, kabupatenHeader, summaryKabupaten)
         ])
 
-        return c.json({ data: finalDataRevenue }, 200)
+        return c.json(finalDataRevenue, 200)
     })
     .get('/hh-max-dates', async c => {
         const selectedDate = subDays(new Date(), 2)

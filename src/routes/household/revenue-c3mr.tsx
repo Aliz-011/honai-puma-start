@@ -19,10 +19,27 @@ const searchParams = {
 }
 
 export const Route = createFileRoute('/household/revenue-c3mr')({
-  component: RouteComponent,
   validateSearch: createStandardSchemaV1(searchParams, {
     partialOutput: true
-  })
+  }),
+  component: RouteComponent,
+  head: () => ({
+    meta: [
+      {
+        name: 'description',
+        content: 'My App is a web application',
+      },
+      {
+        title: 'Revenue C3MR - Household',
+      },
+    ],
+    links: [
+      {
+        rel: 'icon',
+        href: '/favicon.ico',
+      },
+    ],
+  }),
 })
 
 function RouteComponent() {
@@ -157,7 +174,7 @@ function RouteComponent() {
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Ratio C3MR by LoS</h2>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                   <ProgressCard
                     title='LoS 0-6'
                     subtitle="Sub"
