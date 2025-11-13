@@ -51,7 +51,7 @@ app.use('*',
                     const domain = process.env.LDAP_DOMAIN as string;
 
                     const rootDn = process.env.LDAP_BASE_DN as string;
-                    const searchOus = (process.env.LDAP_SEARCH_OUS as string).split(',').filter(Boolean)
+                    const searchOus = "Medan,Batam,Palembang,Atrium,Bandung,Surabaya,Semarang,Denpasar,UjungPandang,Balikpapan,HeadOffice".split(',').filter(Boolean)
 
                     if (!adServer || !domain || !rootDn || searchOus.length === 0) {
                         console.error('LDAP config is incomplete');
