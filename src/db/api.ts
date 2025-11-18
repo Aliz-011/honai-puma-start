@@ -7,6 +7,7 @@ import * as z from 'zod'
 import { HTTPException } from "hono/http-exception";
 import { authHandler, initAuthConfig, verifyAuth } from '@hono/auth-js'
 import Credentials from '@auth/core/providers/credentials'
+import 'dotenv/config'
 
 import campaign from "@/modules/campaign"
 import household from "@/modules/household"
@@ -51,7 +52,7 @@ app.use('*',
                     const domain = process.env.LDAP_DOMAIN as string;
 
                     const rootDn = process.env.LDAP_BASE_DN as string;
-                    const searchOus = "Medan,Batam,Palembang,Atrium,Bandung,Surabaya,Semarang,Denpasar,UjungPandang,Balikpapan,HeadOffice".split(',').filter(Boolean)
+                    const searchOus = "Medan,Batam,Palembang,Atrium,Bandung,Surabaya,Semarang,Denpasar,UjungPandang,Balikpapan,HeadOffice".split(',')
 
                     if (!adServer || !domain || !rootDn || searchOus.length === 0) {
                         console.error('LDAP config is incomplete');
@@ -142,7 +143,6 @@ app.use('*',
                 session.user.id = token.sub as string;
                 session.user.name = token.name as string;
                 session.user.email = token.email as string;
-                // @ts-ignore
                 session.user.username = token.username as string
                 return session;
             },

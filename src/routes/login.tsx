@@ -20,7 +20,7 @@ function RouteComponent() {
     }
 
     if (session?.user) {
-        return navigate({ to: '/', replace: true });
+        navigate({ to: '/', replace: true });
     }
 
     return (

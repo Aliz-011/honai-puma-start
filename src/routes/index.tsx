@@ -27,7 +27,7 @@ function App() {
   }
 
   if (!session?.user) {
-    return navigate({ to: '/login', replace: true });
+    navigate({ to: '/login', replace: true });
   }
 
   return (

@@ -3199,8 +3199,6 @@ const app = new Hono()
         const { date, branch, cluster, kabupaten } = c.req.valid('query')
         const selectedDate = date ? parseISO(date) : subDays(new Date(), 2)
 
-        const currMonth = format(selectedDate, 'MM')
-        const currYear = format(selectedDate, 'yyyy')
         const endOfCurrMonth = endOfMonth(selectedDate);
         console.log({ selectedDate: format(endOfCurrMonth, 'yyyy-MM-dd') });
 

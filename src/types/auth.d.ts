@@ -1,6 +1,6 @@
 import type { DefaultSession } from "@auth/core"
 
-declare module "next-auth" {
+declare module "@auth/core/types" {
     /**
      * Returned by `auth`, `useSession`, `getSession` and received as a prop on the `SessionProvider` React Context
      */
@@ -15,5 +15,11 @@ declare module "next-auth" {
              * you need to add them back into the newly declared interface.
              */
         } & DefaultSession["user"]
+    }
+}
+
+declare module "@auth/core/types" {
+    interface JWT {
+        username?: string
     }
 }

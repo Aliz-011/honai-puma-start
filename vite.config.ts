@@ -20,6 +20,9 @@ const config = defineConfig({
     }),
     viteReact(),
   ],
+  ssr: {
+    noExternal: ['ldapts']
+  }
 })
 
 export default config
