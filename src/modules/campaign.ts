@@ -1,33 +1,24 @@
 import { Hono } from "hono";
 import * as z from 'zod'
 import { zValidator } from '@hono/zod-validator'
-import { format, subDays } from 'date-fns'
+import { format, getDaysInMonth, subDays } from 'date-fns'
+import { and, asc, eq, gt, isNull, like, not, sql } from "drizzle-orm";
+import { stream } from 'hono/streaming'
+
 import { dynamicMultidim } from "@/db/schema/multidim";
-import { dynamicChannelWaBroadband, dynamicWLWABLASTBroadband } from "@/db/schema/zz_denny";
+import { dynamicChannelWaBroadband, wifi_lapser_prevention_puma } from "@/db/schema/zz_denny";
+import { fei_wl_compete_puma_analysis, fei_actual_wl_trade_in } from '@/db/schema/fei'
 import { db } from "@/db";
-import { and, asc, count, countDistinct, eq, gt, isNull, like, not, sql } from "drizzle-orm";
-import AdmZip from 'adm-zip'
+import { territoryArea4 } from "@/db/schema/puma_2025";
 
-const convertToCSV = (data: any[]) => {
-    if (!data.length) return ''
-
-    const headers = Object.keys(data[0])
-    const csvHeaders = headers.join(',')
-
-    const csvRows = data.map(row =>
-        headers.map(header => {
-            const value = row[header]
-            // Escape quotes and wrap in quotes if contains comma or newline
-            if (value === null || value === undefined) return ''
-            const stringValue = String(value)
-            if (stringValue.includes(',') || stringValue.includes('\n') || stringValue.includes('"')) {
-                return `"${stringValue.replace(/"/g, '""')}"`
-            }
-            return stringValue
-        }).join(',')
-    ).join('\n')
-
-    return `${csvHeaders}\n${csvRows}`
+// Escape CSV value - inline for performance
+const escapeCSV = (value: unknown): string => {
+    if (value === null || value === undefined) return ''
+    const str = String(value)
+    if (str.includes(',') || str.includes('\n') || str.includes('"')) {
+        return `"${str.replace(/"/g, '""')}"`
+    }
+    return str
 }
 
 const campaignQuerySchema = z.object({
@@ -46,9 +37,9 @@ const buildWLCampaignQuery = (params: z.infer<typeof campaignQuerySchema>) => {
 
     const currentTime = date ? new Date(date) : subDays(new Date(), 2)
     const period = format(currentTime, 'yyyyMM')
+    const daysInMonth = getDaysInMonth(currentTime)
 
     const multidim = dynamicMultidim(period)
-    const wlWaBlast = dynamicWLWABLASTBroadband(period)
     const channelWaBroadband = dynamicChannelWaBroadband(period)
 
     const conditions = [
@@ -56,45 +47,85 @@ const buildWLCampaignQuery = (params: z.infer<typeof campaignQuerySchema>) => {
         eq(multidim.region_sales, 'PUMA'),
         isNull(channelWaBroadband.Penawaran),
         eq(multidim.rev_data_mtd, '0'),
+        gt(multidim.rev_data_m2, '0'),
+        eq(multidim.rev_m1, '0')
     ]
 
     if (branch) conditions.push(eq(multidim.branch, branch))
-    if (cluster) conditions.push(eq(wlWaBlast.cluster, cluster))
+    if (cluster) conditions.push(eq(multidim.cluster_sales, cluster))
     if (kabupaten) conditions.push(eq(multidim.kabupaten, kabupaten))
     if (kecamatan) conditions.push(eq(multidim.kecamatan, kecamatan))
     if (method === 'wa') conditions.push(like(multidim.bcp_interest_chat, '%WhatsApp%'))
-    if (product_offer === 'slm_lifestage_3') {
-        conditions.push(gt(multidim.los, 90), eq(multidim.interim_lifestage, 3))
+
+    // Product offer filtering - push conditions directly into WHERE
+    if (product_offer === 'wifi_lapser') {
+        conditions.push(sql`${wifi_lapser_prevention_puma.segment} IS NOT NULL`)
+    } else if (product_offer === 'trade_in') {
+        conditions.push(sql`${wifi_lapser_prevention_puma.segment} IS NULL AND ${fei_actual_wl_trade_in.kota} IS NOT NULL`)
+    } else if (product_offer === 'ss_compete') {
+        conditions.push(sql`${wifi_lapser_prevention_puma.segment} IS NULL AND ${fei_actual_wl_trade_in.kota} IS NULL AND ${fei_wl_compete_puma_analysis.kecamatan} IS NOT NULL`)
+    } else if (product_offer === 'pelanggan_baru') {
+        conditions.push(sql`${wifi_lapser_prevention_puma.segment} IS NULL AND ${fei_actual_wl_trade_in.kota} IS NULL AND ${fei_wl_compete_puma_analysis.kecamatan} IS NULL AND ${multidim.los} < 90`)
+    } else if (product_offer === 'lifestage_3') {
+        conditions.push(sql`${wifi_lapser_prevention_puma.segment} IS NULL AND ${fei_actual_wl_trade_in.kota} IS NULL AND ${fei_wl_compete_puma_analysis.kecamatan} IS NULL AND ${multidim.los} > 90 AND ${multidim.interim_lifestage} = 3`)
+    } else if (product_offer === 'reguler_package') {
+        conditions.push(sql`${wifi_lapser_prevention_puma.segment} IS NULL AND ${fei_actual_wl_trade_in.kota} IS NULL AND ${fei_wl_compete_puma_analysis.kecamatan} IS NULL AND ${multidim.los} > 90 AND ${multidim.interim_lifestage} != 3`)
     }
 
     let query = db
         .select({
             msisdn: multidim.msisdn,
-            cluster: wlWaBlast.cluster,
-            city: wlWaBlast.city,
-            los_cat: sql<string>`CASE WHEN ${multidim.los} < 90 THEN '< 90d' ELSE '> 90d' END`.as('los_cat'),
-            product_offer: sql<string>`${product_offer}`.as('product_offer'),
-            priority: sql<string>`CONCAT(
-                CASE WHEN ${wlWaBlast.cluster} IS NOT NULL THEN 'P1' ELSE 'P2' END,
-                CASE WHEN ${multidim.device_type} IN ('Mobile Phone/Feature phone','Smartphone','Tablet') THEN 'P1' ELSE 'P2' END,
-                CASE WHEN ${multidim.status} IN ('A','G','E') THEN 'P1' ELSE 'P2' END,
-                CASE WHEN ${multidim.rev_data_mtd_m1} > 0 THEN 'P1' ELSE 'P2' END,
-                CASE WHEN ${multidim.vol_data_mtd} > 0 THEN 'P1' ELSE 'P2' END,
-                CASE 
-                    WHEN ${multidim.vol_data_pack_remain} / (${multidim.vol_data_mtd} / 26) <3 THEN 'P1'
-                    WHEN ${multidim.vol_data_pack_remain} / (${multidim.vol_data_mtd} / 26) BETWEEN 3 AND 7 THEN 'P2'
-                    WHEN ${multidim.vol_data_pack_remain} / (${multidim.vol_data_mtd} / 26) >7 THEN 'P3'
-                    ELSE 'P4' 
-                END
-            )`.as('priority')
+            site_id: multidim.site_id,
+            kecamatan: multidim.kecamatan,
+            kabupaten: multidim.kabupaten,
+            branch: territoryArea4.branch,
+
+            product_offer: sql<string>`CASE 
+                WHEN ${wifi_lapser_prevention_puma.segment} IS NOT NULL THEN 'Wifi lapser'
+                WHEN ${wifi_lapser_prevention_puma.segment} IS NULL AND ${fei_actual_wl_trade_in.kota} IS NOT NULL THEN 'trade-in'
+                WHEN ${wifi_lapser_prevention_puma.segment} IS NULL AND ${fei_actual_wl_trade_in.kota} IS NULL AND ${fei_wl_compete_puma_analysis.kecamatan} IS NOT NULL THEN 'SS Compete'
+                WHEN ${wifi_lapser_prevention_puma.segment} IS NULL AND ${fei_actual_wl_trade_in.kota} IS NULL AND ${fei_wl_compete_puma_analysis.kecamatan} IS NULL AND ${multidim.los} < 90 THEN 'pelanggan baru'
+                WHEN ${wifi_lapser_prevention_puma.segment} IS NULL AND ${fei_actual_wl_trade_in.kota} IS NULL AND ${fei_wl_compete_puma_analysis.kecamatan} IS NULL AND ${multidim.los} > 90 AND ${multidim.interim_lifestage} = 3 THEN 'lifestage 3'
+                WHEN ${wifi_lapser_prevention_puma.segment} IS NULL AND ${fei_actual_wl_trade_in.kota} IS NULL AND ${fei_wl_compete_puma_analysis.kecamatan} IS NULL AND ${multidim.los} > 90 AND ${multidim.interim_lifestage} != 3 THEN 'reguler package'
+            END`.as('product_offer'),
+
+            denom_offer: sql<string>`CASE
+                WHEN ${multidim.rev_data_stretch_mtd} BETWEEN 0 AND 50000 THEN 'low denom'
+                WHEN ${multidim.rev_data_stretch_mtd} > 50000 THEN 'high denom'
+            END `.as('denom_offer'),
+
+            status: multidim.status,
+
+            campaign_method: sql<string>`CASE
+                WHEN ${multidim.bcp_interest_chat} LIKE '%WhatsApp%' THEN 'WA Blast' ELSE 'SMS Blast'
+            END`.as('campaign_method'),
+
+            wl_category: sql<string>`CASE
+                WHEN ${multidim.rev_data_m1} = 0 THEN 'Non RGB M1'
+                WHEN ${multidim.rev_data_m1} > 0 AND ${multidim.rev_data_mtd_m1} = 0 THEN 'Non RGB MTD1'
+                WHEN ${multidim.rev_data_m1} > 0 AND ${multidim.rev_data_mtd_m1} > 0 THEN 'uplift'
+            END`.as('wl_category'),
+
+            priority: sql<string>`CASE 
+                WHEN ${multidim.vol_data_pack_remain} / (${multidim.vol_data_m1} / ${daysInMonth}) BETWEEN 0 AND 14 THEN 1
+                WHEN ${multidim.vol_data_pack_remain} / (${multidim.vol_data_m1} / ${daysInMonth}) > 14 THEN 2
+                WHEN ${multidim.vol_data_pack_remain} / (${multidim.vol_data_m1} / ${daysInMonth}) IS NULL AND ${multidim.days_expiry_data} BETWEEN 0 AND 14 THEN 3
+                WHEN ${multidim.vol_data_pack_remain} / (${multidim.vol_data_m1} / ${daysInMonth}) IS NULL AND ${multidim.days_expiry_data} > 14 THEN 4
+                WHEN ${multidim.vol_data_pack_remain} / (${multidim.vol_data_m1} / ${daysInMonth}) IS NULL AND ${multidim.days_expiry_data} IS NULL AND ${multidim.rev_data_mtd_m1} > 0 THEN 6
+                WHEN ${multidim.vol_data_pack_remain} / (${multidim.vol_data_m1} / ${daysInMonth}) IS NULL AND ${multidim.days_expiry_data} IS NULL AND ${multidim.rev_data_mtd_m1} = 0 THEN 7
+                WHEN ${multidim.vol_data_pack_remain} / (${multidim.vol_data_m1} / ${daysInMonth}) IS NULL AND ${multidim.days_expiry_data} IS NULL AND ${multidim.rev_data_mtd_m1} = 0 AND ${multidim.rev_data_avg_l3m} > 0 THEN 8
+            ELSE 8 END`.as('priority')
         })
         .from(multidim)
-        .leftJoin(wlWaBlast, eq(multidim.msisdn, wlWaBlast.msisdn))
+        .leftJoin(territoryArea4, eq(multidim.kabupaten, territoryArea4.kabupaten))
+        .leftJoin(wifi_lapser_prevention_puma, and(eq(multidim.msisdn, wifi_lapser_prevention_puma.msisdn), eq(wifi_lapser_prevention_puma.periode, sql`(SELECT MAX(${wifi_lapser_prevention_puma.periode}) FROM ${wifi_lapser_prevention_puma})`)))
+        .leftJoin(fei_actual_wl_trade_in, eq(multidim.msisdn, fei_actual_wl_trade_in.msisdn_trade_in))
+        .leftJoin(fei_wl_compete_puma_analysis, and(eq(multidim.msisdn, fei_wl_compete_puma_analysis.msisdn), eq(fei_wl_compete_puma_analysis.periode, sql`(SELECT MAX(${fei_wl_compete_puma_analysis.periode}) FROM ${fei_wl_compete_puma_analysis})`)))
         .leftJoin(channelWaBroadband, eq(multidim.msisdn, channelWaBroadband.MSISDN_Pelanggan))
         .where(and(...conditions))
         .orderBy(asc(sql`priority`))
 
-    if (rows) {
+    if (rows && parseInt(rows) > 0) {
         query = query.limit(parseInt(rows)) as any
     }
 
@@ -102,69 +133,23 @@ const buildWLCampaignQuery = (params: z.infer<typeof campaignQuerySchema>) => {
 }
 
 const app = new Hono()
-    .get('/campaign-achievement', zValidator('query', z.object({ branch: z.string().optional(), cluster: z.string().optional(), kabupaten: z.string().optional() })),
+    .get('/wl-campaign', zValidator('query', campaignQuerySchema),
         async c => {
             const params = c.req.valid('query')
 
-            const currentTime = subDays(new Date(), 2)
-            const period = format(currentTime, 'yyyyMM')
-            const { cluster, kabupaten, branch } = params
+            // Default limit for API response (smaller than download)
+            if (!params.rows) params.rows = '1000'
 
-            const multidim = dynamicMultidim(period)
-            const wlWaBlast = dynamicWLWABLASTBroadband(period)
-            const channelWaBroadband = dynamicChannelWaBroadband(period)
+            const query = buildWLCampaignQuery(params)
+            const listWl = await query
 
-            const conditions = [
-                eq(wlWaBlast.region, 'PUMA')
-            ]
-
-            if (branch) conditions.push(eq(wlWaBlast.branch, branch))
-            if (cluster) conditions.push(eq(wlWaBlast.cluster, cluster))
-            if (kabupaten) conditions.push(eq(wlWaBlast.city, kabupaten))
-
-            const subqueryMultidim = db
-                .select({
-                    msisdn: multidim.msisdn,
-                    rev_data_mtd: multidim.rev_data_mtd,
-                    rev_data_m1: multidim.rev_data_m1,
-                    rev_data_pack_mtd: multidim.rev_data_pack_mtd,
-                    rev_data_pack_m1: multidim.rev_data_pack_m1,
-                    rev_data_pack_mtd_m1: multidim.rev_data_pack_mtd_m1,
-                    gap_rev_data_mtd: sql<string>`${multidim.rev_data_mtd} - ${multidim.rev_data_m1}`.as('gap_rev_data_mtd')
-                })
-                .from(multidim)
-                .as('subqueryMultidim')
-
-            const subqueryWlWaBlast = db
-                .select({
-                    msisdn: wlWaBlast.msisdn,
-                    branch: wlWaBlast.branch,
-                    cluster: wlWaBlast.cluster,
-                    segment_los: wlWaBlast.segment_los
-                })
-                .from(wlWaBlast)
-                .where(and(...conditions))
-                .groupBy(sql`1,2,3,4`)
-                .as('subqueryWlWaBlast')
-
-            const achievements = await db
-                .select({
-                    cluster: subqueryWlWaBlast.cluster,
-                    champion: sql<string>`CASE WHEN ${channelWaBroadband.Penawaran} IS NOT NULL THEN 'Y' ELSE 'N' END`.as('champion'),
-                    segment_los: subqueryWlWaBlast.segment_los,
-                    trx: count(subqueryWlWaBlast.msisdn),
-                    subs: countDistinct(subqueryWlWaBlast.msisdn)
-                })
-                .from(subqueryWlWaBlast)
-                .leftJoin(channelWaBroadband, eq(subqueryWlWaBlast.msisdn, channelWaBroadband.MSISDN_Pelanggan))
-                .leftJoin(subqueryMultidim, eq(subqueryWlWaBlast.msisdn, subqueryMultidim.msisdn))
-                .groupBy(sql`1,2,3`)
+            console.log(`[WL Campaign API] Query returned ${listWl.length} rows`)
 
             return c.json(
-                { data: achievements },
+                { data: listWl, count: listWl.length },
                 200,
                 {
-                    'Cache-Control': 'public, max-age=300', // 5 minutes
+                    'Cache-Control': 'public, max-age=60', // 1 minute cache
                 }
             )
         })
@@ -172,9 +157,8 @@ const app = new Hono()
         async c => {
             const params = c.req.valid('query')
 
-            const listWl = await buildWLCampaignQuery(params)
-
-            const csv = convertToCSV(listWl)
+            // Default limit to prevent server overload
+            if (!params.rows) params.rows = '30000'
 
             const timestamp = format(new Date(), 'yyyyMMdd')
             const filterParts = [
@@ -185,16 +169,36 @@ const app = new Hono()
             ].filter(Boolean).join('_')
 
             const filename = `wl_campaign_${timestamp}${filterParts ? '_' + filterParts : ''}.csv`
-            const zipFilename = `wl_campaign_${timestamp}${filterParts ? '_' + filterParts : ''}.zip`
 
-            const zip = new AdmZip()
-            zip.addFile(filename, Buffer.from(csv, 'utf-8'))
-            const zipBuffer = zip.toBuffer()
+            // Set headers BEFORE streaming
+            c.header('Content-Type', 'text/csv; charset=utf-8')
+            c.header('Content-Disposition', `attachment; filename="${filename}"`)
 
-            return c.body(new Uint8Array(zipBuffer), 200, {
-                'Content-Type': 'application/zip',
-                'Content-Disposition': `attachment; filename="${zipFilename}"`,
-                'Cache-Control': 'no-cache',
+            // Stream CSV directly - much lighter on memory
+            return stream(c, async (stream) => {
+                const query = buildWLCampaignQuery(params)
+                const listWl = await query
+
+                console.log(`[WL Campaign] Query returned ${listWl.length} rows`)
+
+                if (listWl.length === 0) {
+                    await stream.write('No data found')
+                    return
+                }
+
+                // Write CSV header
+                const headers = Object.keys(listWl[0])
+                await stream.write(headers.join(',') + '\n')
+
+                // Process in chunks to reduce memory pressure
+                const CHUNK_SIZE = 500
+                for (let i = 0; i < listWl.length; i += CHUNK_SIZE) {
+                    const chunk = listWl.slice(i, Math.min(i + CHUNK_SIZE, listWl.length))
+                    const csvLines = chunk.map(row =>
+                        headers.map(h => escapeCSV(row[h as keyof typeof row])).join(',')
+                    ).join('\n') + '\n'
+                    await stream.write(csvLines)
+                }
             })
         })
 

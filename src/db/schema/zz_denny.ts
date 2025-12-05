@@ -1,4 +1,4 @@
-import { mysqlSchema, varchar, decimal, int } from "drizzle-orm/mysql-core";
+import { mysqlSchema, varchar, int } from "drizzle-orm/mysql-core";
 
 export const zz_denny = mysqlSchema('zz_denny')
 
@@ -52,3 +52,11 @@ export const dynamicChannelWaBroadband = (period: string) => {
         ID_Campaign: varchar({ length: 25 }),
     })
 }
+
+export const wifi_lapser_prevention_puma = zz_denny.table('wifi_lapser_prevention_puma', {
+    periode: varchar('periode', { length: 10 }),
+    msisdn: varchar('msisdn', { length: 17 }),
+    segment: varchar('segment', { length: 20 }),
+    unk: varchar('unk', { length: 20 }),
+    SID: varchar('SID', { length: 10 }),
+})

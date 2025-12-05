@@ -6,7 +6,7 @@ declare module "@auth/core/types" {
      */
     interface Session {
         user: {
-            /** The user's postal address. */
+            /** The user's username. */
             username: string
             /**
              * By default, TypeScript merges new interface properties and overwrites existing ones.

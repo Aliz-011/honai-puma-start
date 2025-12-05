@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query"
 import { useMemo, useState } from "react"
 import { Funnel, Loader2 } from "lucide-react"
 import { useQueryStates, parseAsString } from 'nuqs'
-import DatePicker from 'react-datepicker';
 import { RiDownload2Line } from "@remixicon/react"
 import { toast } from "sonner"
 
@@ -298,24 +297,14 @@ export const Filter = () => {
                             <SelectValue placeholder="Product Offer" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="seasonal">Seasonal</SelectItem>
-                            <SelectItem value="slm_lifestage_3">SLM Lifestage 3</SelectItem>
+                            <SelectItem value="wifi_lapser">Wifi Lapser</SelectItem>
+                            <SelectItem value="trade_in">Trade-in</SelectItem>
+                            <SelectItem value="ss_compete">SS Compete</SelectItem>
+                            <SelectItem value="pelanggan_baru">Pelanggan Baru</SelectItem>
+                            <SelectItem value="lifestage_3">Lifestage 3</SelectItem>
+                            <SelectItem value="reguler_package">Reguler Package</SelectItem>
                         </SelectContent>
                     </Select>
-                </Field>
-            </div>
-
-            <div className="w-full max-w-md">
-                <Field>
-                    <DatePicker
-                        selected={localDate}
-                        onChange={(date) => setLocalDate(date)}
-                        dateFormat="yyyy-MM"
-                        showMonthYearPicker
-                        showFullMonthYearPicker
-                        placeholderText="Select Month/Year"
-                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50"
-                    />
                 </Field>
             </div>
 
