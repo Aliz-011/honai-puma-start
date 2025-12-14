@@ -3,7 +3,7 @@ import { config } from 'dotenv'
 import { drizzle } from 'drizzle-orm/mysql2'
 import mysql from 'mysql2'
 
-import * as schema from './todos'
+import * as schema from './schema/auth'
 
 config()
 

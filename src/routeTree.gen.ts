@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PumaRouteImport } from './routes/puma'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HouseholdRouteImport } from './routes/household'
@@ -37,6 +38,11 @@ import { Route as HouseholdConsolidationMobileHhRevBbRouteImport } from './route
 import { Route as HouseholdConsolidationMobileHhRevAllRouteImport } from './routes/household/consolidation-mobile-hh/rev-all'
 import { Route as HouseholdConsolidationMobileHhPayloadRouteImport } from './routes/household/consolidation-mobile-hh/payload'
 
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PumaRoute = PumaRouteImport.update({
   id: '/puma',
   path: '/puma',
@@ -187,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/household': typeof HouseholdRouteWithChildren
   '/login': typeof LoginRoute
   '/puma': typeof PumaRouteWithChildren
+  '/register': typeof RegisterRoute
   '/household/consolidation-mobile-hh': typeof HouseholdConsolidationMobileHhRouteRouteWithChildren
   '/api/$': typeof ApiSplatRoute
   '/household/demands-deployment': typeof HouseholdDemandsDeploymentRoute
@@ -215,6 +222,7 @@ export interface FileRoutesByTo {
   '/household': typeof HouseholdRouteWithChildren
   '/login': typeof LoginRoute
   '/puma': typeof PumaRouteWithChildren
+  '/register': typeof RegisterRoute
   '/household/consolidation-mobile-hh': typeof HouseholdConsolidationMobileHhRouteRouteWithChildren
   '/api/$': typeof ApiSplatRoute
   '/household/demands-deployment': typeof HouseholdDemandsDeploymentRoute
@@ -245,6 +253,7 @@ export interface FileRoutesById {
   '/household': typeof HouseholdRouteWithChildren
   '/login': typeof LoginRoute
   '/puma': typeof PumaRouteWithChildren
+  '/register': typeof RegisterRoute
   '/household/consolidation-mobile-hh': typeof HouseholdConsolidationMobileHhRouteRouteWithChildren
   '/api/$': typeof ApiSplatRoute
   '/household/demands-deployment': typeof HouseholdDemandsDeploymentRoute
@@ -276,6 +285,7 @@ export interface FileRouteTypes {
     | '/household'
     | '/login'
     | '/puma'
+    | '/register'
     | '/household/consolidation-mobile-hh'
     | '/api/$'
     | '/household/demands-deployment'
@@ -304,6 +314,7 @@ export interface FileRouteTypes {
     | '/household'
     | '/login'
     | '/puma'
+    | '/register'
     | '/household/consolidation-mobile-hh'
     | '/api/$'
     | '/household/demands-deployment'
@@ -333,6 +344,7 @@ export interface FileRouteTypes {
     | '/household'
     | '/login'
     | '/puma'
+    | '/register'
     | '/household/consolidation-mobile-hh'
     | '/api/$'
     | '/household/demands-deployment'
@@ -363,11 +375,19 @@ export interface RootRouteChildren {
   HouseholdRoute: typeof HouseholdRouteWithChildren
   LoginRoute: typeof LoginRoute
   PumaRoute: typeof PumaRouteWithChildren
+  RegisterRoute: typeof RegisterRoute
   ApiSplatRoute: typeof ApiSplatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/puma': {
       id: '/puma'
       path: '/puma'
@@ -652,6 +672,7 @@ const rootRouteChildren: RootRouteChildren = {
   HouseholdRoute: HouseholdRouteWithChildren,
   LoginRoute: LoginRoute,
   PumaRoute: PumaRouteWithChildren,
+  RegisterRoute: RegisterRoute,
   ApiSplatRoute: ApiSplatRoute,
 }
 export const routeTree = rootRouteImport

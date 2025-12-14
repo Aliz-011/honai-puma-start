@@ -1,62 +1,74 @@
-import { mysqlTable, varchar, text, timestamp, boolean } from "drizzle-orm/mysql-core";
+import { mysqlSchema, mysqlTable, varchar, timestamp, boolean, index } from "drizzle-orm/mysql-core";
+import { v7 as uuidv7 } from 'uuid'
 
-export const users = mysqlTable("users", {
-  id: varchar('id', { length: 36 }).primaryKey(),
-  name: text('name').notNull(),
-  email: varchar('email', { length: 100 }).notNull().unique(),
-  emailVerified: boolean('email_verified').$defaultFn(() => false).notNull(),
-  image: text('image'),
-  createdAt: timestamp('created_at').$defaultFn(() => /* @__PURE__ */ new Date()).notNull(),
-  updatedAt: timestamp('updated_at').$defaultFn(() => /* @__PURE__ */ new Date()).notNull(),
-  username: varchar('username', { length: 100 }).unique(),
-  displayUsername: text('display_username'),
-  nik: varchar('nik', { length: 100 }).unique(),
-  phoneNumber: varchar('phone_number', { length: 100 }).unique()
+const authSchema = mysqlSchema('db_auth')
+
+export const users = authSchema.table("users", {
+  id: varchar("id", { length: 36 }).primaryKey().$defaultFn(() => uuidv7()),
+  name: varchar("name", { length: 50 }).notNull(),
+  email: varchar("email", { length: 100 }).notNull().unique(),
+  emailVerified: boolean("email_verified").default(false).notNull(),
+  image: varchar("image", { length: 100 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+  username: varchar("username", { length: 50 }).unique(),
+  displayUsername: varchar("display_username", { length: 50 }),
 });
 
-export const sessions = mysqlTable("sessions", {
-  id: varchar('id', { length: 36 }).primaryKey(),
-  expiresAt: timestamp('expires_at').notNull(),
-  token: varchar('token', { length: 100 }).notNull().unique(),
-  createdAt: timestamp('created_at').notNull(),
-  updatedAt: timestamp('updated_at').notNull(),
-  ipAddress: text('ip_address'),
-  userAgent: text('user_agent'),
-  userId: varchar('user_id', { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' })
-});
+export const sessions = authSchema.table("sessions", {
+  id: varchar("id", { length: 36 }).primaryKey().$defaultFn(() => uuidv7()),
+  expiresAt: timestamp("expires_at").notNull(),
+  token: varchar("token", { length: 100 }).notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .$onUpdate(() => new Date())
+    .notNull(),
+  ipAddress: varchar("ip_address", { length: 50 }),
+  userAgent: varchar("user_agent", { length: 255 }),
+  userId: varchar("user_id", { length: 36 })
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+}, (table) => ({
+  userIdIdx: index("sessions_user_id_idx").on(table.userId).using('btree'),
+  expiresAtIdx: index("sessions_expires_at_idx").on(table.expiresAt).using('btree'),
+}));
 
-export const accounts = mysqlTable("accounts", {
-  id: varchar('id', { length: 36 }).primaryKey(),
-  accountId: text('account_id').notNull(),
-  providerId: text('provider_id').notNull(),
-  userId: varchar('user_id', { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
-  accessToken: text('access_token'),
-  refreshToken: text('refresh_token'),
-  idToken: text('id_token'),
-  accessTokenExpiresAt: timestamp('access_token_expires_at'),
-  refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
-  scope: text('scope'),
-  password: text('password'),
-  createdAt: timestamp('created_at').notNull(),
-  updatedAt: timestamp('updated_at').notNull()
-});
+export const accounts = authSchema.table("accounts", {
+  id: varchar("id", { length: 36 }).primaryKey().$defaultFn(() => uuidv7()),
+  accountId: varchar("account_id", { length: 40 }).notNull(),
+  providerId: varchar("provider_id", { length: 40 }).notNull(),
+  userId: varchar("user_id", { length: 36 })
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  accessToken: varchar("access_token", { length: 100 }),
+  refreshToken: varchar("refresh_token", { length: 100 }),
+  idToken: varchar("id_token", { length: 100 }),
+  accessTokenExpiresAt: timestamp("access_token_expires_at"),
+  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+  scope: varchar("scope", { length: 100 }),
+  password: varchar("password", { length: 255 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .$onUpdate(() => new Date())
+    .notNull(),
+}, (table) => ({
+  userIdIdx: index("accounts_user_id_idx").on(table.userId),
+  accountProviderIdx: index("accounts_provider_idx").on(table.accountId, table.providerId),
+}));
 
-export const verifications = mysqlTable("verifications", {
-  id: varchar('id', { length: 36 }).primaryKey(),
-  identifier: text('identifier').notNull(),
-  value: text('value').notNull(),
-  expiresAt: timestamp('expires_at').notNull(),
-  createdAt: timestamp('created_at').$defaultFn(() => /* @__PURE__ */ new Date()),
-  updatedAt: timestamp('updated_at').$defaultFn(() => /* @__PURE__ */ new Date())
-});
-
-export const ssoProviders = mysqlTable("sso_providers", {
-  id: varchar('id', { length: 36 }).primaryKey(),
-  issuer: text('issuer').notNull(),
-  oidcConfig: text('oidc_config'),
-  samlConfig: text('saml_config'),
-  userId: varchar('user_id', { length: 36 }).references(() => users.id, { onDelete: 'cascade' }),
-  providerId: varchar('provider_id', { length: 100 }).notNull().unique(),
-  organizationId: text('organization_id'),
-  domain: text('domain').notNull()
-});
+export const verifications = authSchema.table("verifications", {
+  id: varchar("id", { length: 36 }).primaryKey().$defaultFn(() => uuidv7()),
+  identifier: varchar("identifier", { length: 50 }).notNull(),
+  value: varchar("value", { length: 50 }).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+}, (table) => ({
+  identifierIdx: index("verifications_identifier_idx").on(table.identifier),
+}));

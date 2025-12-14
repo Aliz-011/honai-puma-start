@@ -7,6 +7,7 @@ import * as z from 'zod'
 import { HTTPException } from "hono/http-exception";
 import { authHandler, initAuthConfig, verifyAuth } from '@hono/auth-js'
 import Credentials from '@auth/core/providers/credentials'
+import { verify } from "@/lib/password";
 import 'dotenv/config'
 
 import campaign from "@/modules/campaign"
@@ -20,6 +21,7 @@ import rgb from "@/modules/paying-subs"
 import { summaryBbCity, summaryRevAllByLosKabupaten, summaryRevAllKabupaten, summaryRgbHqKabupaten, summarySoAllKabupaten } from './schema/v_honai_puma'
 import { db } from '.'
 import { territoryArea4 } from './schema/puma_2025'
+import { getUserByUsername } from '@/data/user'
 
 const app = new Hono()
 
@@ -42,6 +44,36 @@ app.use('*',
         trustHost: true,
         providers: [
             Credentials({
+                id: 'credentials',
+                name: 'Credentials',
+                credentials: {
+                    username: { label: 'Username', type: 'text' },
+                    password: { label: 'Password', type: 'password' }
+                },
+                async authorize(credentials) {
+                    const validate = loginSchema.safeParse(credentials)
+                    if (!validate.success) return null;
+
+                    const { username, password } = validate.data
+
+                    const user = await getUserByUsername({ data: { username, password } })
+
+                    if (!user || !user.password) return null;
+
+                    const isPasswordValid = await verify(user.password, password)
+
+                    if (!isPasswordValid) return null;
+
+                    return {
+                        id: user.id,
+                        username: user.username,
+                        email: user.email,
+                        name: user.name
+                    }
+                }
+            }),
+            Credentials({
+                id: 'ldap',
                 name: 'LDAP',
                 credentials: {
                     username: { label: "Username", type: "text" },
