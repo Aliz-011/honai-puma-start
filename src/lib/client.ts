@@ -1,5 +1,5 @@
 
-import { AppType } from "@/db/api";
+import type { AppType } from "@/db/api";
 import { createIsomorphicFn } from "@tanstack/react-start";
 import { hc } from "hono/client";
 

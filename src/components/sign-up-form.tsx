@@ -1,6 +1,5 @@
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
-import { HTTPException } from "hono/http-exception";
 import { useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import * as z from "zod/v4";

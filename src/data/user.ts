@@ -1,35 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { eq } from "drizzle-orm";
 import * as z from "zod/v4-mini";
-import { hash } from "@/lib/password";
-
-import { db } from "@/db";
-import { accounts, users } from "@/db/schema/auth";
-
-export const getUserByUsername = createServerFn({ method: 'GET' })
-    .inputValidator(z.object({
-        username: z.string(),
-        password: z.string()
-    }))
-    .handler(async ({ data }) => {
-        const [user] = await db
-            .select({
-                id: users.id,
-                username: users.username,
-                email: users.email,
-                name: users.name,
-                password: accounts.password
-            })
-            .from(users)
-            .leftJoin(accounts, eq(users.id, accounts.userId))
-            .where(eq(users.username, data.username))
-
-        if (!user) {
-            throw new Error('User not found')
-        }
-
-        return user
-    })
 
 export const createUser = createServerFn({ method: 'POST' })
     .inputValidator(z.object({
@@ -39,27 +9,15 @@ export const createUser = createServerFn({ method: 'POST' })
         name: z.string()
     }))
     .handler(async ({ data }) => {
-        const [user] = await db
-            .insert(users)
-            .values({
-                username: data.username,
-                email: data.email,
-                name: data.name
-            })
-            .$returningId()
+        // Dynamically import server-only logic to avoid top-level bundle inclusion
+        const { createUserInDb } = await import("./user.server");
 
-        const hashedPassword = await hash(data.password)
-
-        await db.insert(accounts).values({
-            userId: user.id,
-            password: hashedPassword,
-            providerId: 'credentials',
-            accountId: user.id
-        })
-
-        if (!user.id) {
-            throw new Error('User not found')
+        try {
+            const user = await createUserInDb(data);
+            return user;
+        } catch (error) {
+            console.error("Failed to create user", error);
+            // Re-throw or handle error appropriately to propagate to client
+            throw error;
         }
-
-        return user
     })

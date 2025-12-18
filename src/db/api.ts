@@ -11,6 +11,7 @@ import { verify } from "@/lib/password";
 import 'dotenv/config'
 
 import campaign from "@/modules/campaign"
+import kvWording from "@/modules/kv-wording"
 import household from "@/modules/household"
 import revenueAll from "@/modules/revenue-all"
 import newSales from "@/modules/new-sales"
@@ -21,7 +22,7 @@ import rgb from "@/modules/paying-subs"
 import { summaryBbCity, summaryRevAllByLosKabupaten, summaryRevAllKabupaten, summaryRgbHqKabupaten, summarySoAllKabupaten } from './schema/v_honai_puma'
 import { db } from '.'
 import { territoryArea4 } from './schema/puma_2025'
-import { getUserByUsername } from '@/data/user'
+import { getUserByUsername } from '@/data/user.server'
 
 const app = new Hono()
 
@@ -39,13 +40,12 @@ const loginSchema = z.object({
 })
 
 app.use('*',
-    initAuthConfig((c) => ({
+    initAuthConfig(() => ({
         secret: process.env.AUTH_SECRET!,
         trustHost: true,
         providers: [
             Credentials({
                 id: 'credentials',
-                name: 'Credentials',
                 credentials: {
                     username: { label: 'Username', type: 'text' },
                     password: { label: 'Password', type: 'password' }
@@ -56,7 +56,7 @@ app.use('*',
 
                     const { username, password } = validate.data
 
-                    const user = await getUserByUsername({ data: { username, password } })
+                    const user = await getUserByUsername({ username, password })
 
                     if (!user || !user.password) return null;
 
@@ -108,6 +108,7 @@ app.use('*',
 
                         console.log('AUTH_SECRET exists:', !!process.env.AUTH_SECRET)
                         console.log('LDAP_URL:', process.env.LDAP_URL)
+                        console.log('APP_URL:', process.env.APP_URL)
 
                         for (const ou of searchOus) {
                             const baseDn = `ou=${ou},${rootDn}`
@@ -199,6 +200,7 @@ app.onError((err, c) => {
 const routes = app
     .basePath('/api')
     .route('/campaign', campaign)
+    .route('/campaign/kv', kvWording)
     .route('/household', household)
     .route('/', revenueAll)
     .route('/', cvm)

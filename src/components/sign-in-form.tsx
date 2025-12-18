@@ -57,6 +57,7 @@ export default function SignInForm() {
             mutation.mutate({ ...value }, {
                 onSuccess: async () => {
                     toast.success("Sign in successful");
+                    console.log(authMethod);
 
                     await new Promise(resolve => setTimeout(resolve, 500));
 

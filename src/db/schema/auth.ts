@@ -1,4 +1,4 @@
-import { mysqlSchema, mysqlTable, varchar, timestamp, boolean, index } from "drizzle-orm/mysql-core";
+import { mysqlSchema, mysqlTable, varchar, timestamp, boolean, index, text } from "drizzle-orm/mysql-core";
 import { v7 as uuidv7 } from 'uuid'
 
 const authSchema = mysqlSchema('db_auth')
@@ -58,6 +58,19 @@ export const accounts = authSchema.table("accounts", {
   userIdIdx: index("accounts_user_id_idx").on(table.userId),
   accountProviderIdx: index("accounts_provider_idx").on(table.accountId, table.providerId),
 }));
+
+export const kvWording = authSchema.table("kv_wording", {
+  id: varchar("id", { length: 36 }).primaryKey().$defaultFn(() => uuidv7()),
+  title: varchar("title", { length: 255 }).notNull(),
+  imagePath: varchar("image_path", { length: 255 }).notNull(),
+  waWording: text("wa_wording").notNull(),
+  smsWording: text("sms_wording").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
 
 export const verifications = authSchema.table("verifications", {
   id: varchar("id", { length: 36 }).primaryKey().$defaultFn(() => uuidv7()),

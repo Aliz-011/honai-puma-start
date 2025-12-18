@@ -32,6 +32,8 @@ import { Route as PumaPayingSubsRouteImport } from './routes/puma/paying-subs'
 import { Route as HouseholdSalesFulfilmentRouteImport } from './routes/household/sales-fulfilment'
 import { Route as HouseholdRevenueC3mrRouteImport } from './routes/household/revenue-c3mr'
 import { Route as HouseholdDemandsDeploymentRouteImport } from './routes/household/demands-deployment'
+import { Route as CampaignManageKvRouteImport } from './routes/campaign/manage-kv'
+import { Route as CampaignKvWordingRouteImport } from './routes/campaign/kv-wording'
 import { Route as ApiSplatRouteImport } from './routes/api.$'
 import { Route as HouseholdConsolidationMobileHhRouteRouteImport } from './routes/household/consolidation-mobile-hh/route'
 import { Route as HouseholdConsolidationMobileHhRevBbRouteImport } from './routes/household/consolidation-mobile-hh/rev-bb'
@@ -157,6 +159,16 @@ const HouseholdDemandsDeploymentRoute =
     path: '/demands-deployment',
     getParentRoute: () => HouseholdRoute,
   } as any)
+const CampaignManageKvRoute = CampaignManageKvRouteImport.update({
+  id: '/manage-kv',
+  path: '/manage-kv',
+  getParentRoute: () => CampaignRoute,
+} as any)
+const CampaignKvWordingRoute = CampaignKvWordingRouteImport.update({
+  id: '/kv-wording',
+  path: '/kv-wording',
+  getParentRoute: () => CampaignRoute,
+} as any)
 const ApiSplatRoute = ApiSplatRouteImport.update({
   id: '/api/$',
   path: '/api/$',
@@ -196,6 +208,8 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/household/consolidation-mobile-hh': typeof HouseholdConsolidationMobileHhRouteRouteWithChildren
   '/api/$': typeof ApiSplatRoute
+  '/campaign/kv-wording': typeof CampaignKvWordingRoute
+  '/campaign/manage-kv': typeof CampaignManageKvRoute
   '/household/demands-deployment': typeof HouseholdDemandsDeploymentRoute
   '/household/revenue-c3mr': typeof HouseholdRevenueC3mrRoute
   '/household/sales-fulfilment': typeof HouseholdSalesFulfilmentRoute
@@ -225,6 +239,8 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/household/consolidation-mobile-hh': typeof HouseholdConsolidationMobileHhRouteRouteWithChildren
   '/api/$': typeof ApiSplatRoute
+  '/campaign/kv-wording': typeof CampaignKvWordingRoute
+  '/campaign/manage-kv': typeof CampaignManageKvRoute
   '/household/demands-deployment': typeof HouseholdDemandsDeploymentRoute
   '/household/revenue-c3mr': typeof HouseholdRevenueC3mrRoute
   '/household/sales-fulfilment': typeof HouseholdSalesFulfilmentRoute
@@ -256,6 +272,8 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/household/consolidation-mobile-hh': typeof HouseholdConsolidationMobileHhRouteRouteWithChildren
   '/api/$': typeof ApiSplatRoute
+  '/campaign/kv-wording': typeof CampaignKvWordingRoute
+  '/campaign/manage-kv': typeof CampaignManageKvRoute
   '/household/demands-deployment': typeof HouseholdDemandsDeploymentRoute
   '/household/revenue-c3mr': typeof HouseholdRevenueC3mrRoute
   '/household/sales-fulfilment': typeof HouseholdSalesFulfilmentRoute
@@ -288,6 +306,8 @@ export interface FileRouteTypes {
     | '/register'
     | '/household/consolidation-mobile-hh'
     | '/api/$'
+    | '/campaign/kv-wording'
+    | '/campaign/manage-kv'
     | '/household/demands-deployment'
     | '/household/revenue-c3mr'
     | '/household/sales-fulfilment'
@@ -317,6 +337,8 @@ export interface FileRouteTypes {
     | '/register'
     | '/household/consolidation-mobile-hh'
     | '/api/$'
+    | '/campaign/kv-wording'
+    | '/campaign/manage-kv'
     | '/household/demands-deployment'
     | '/household/revenue-c3mr'
     | '/household/sales-fulfilment'
@@ -347,6 +369,8 @@ export interface FileRouteTypes {
     | '/register'
     | '/household/consolidation-mobile-hh'
     | '/api/$'
+    | '/campaign/kv-wording'
+    | '/campaign/manage-kv'
     | '/household/demands-deployment'
     | '/household/revenue-c3mr'
     | '/household/sales-fulfilment'
@@ -542,6 +566,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HouseholdDemandsDeploymentRouteImport
       parentRoute: typeof HouseholdRoute
     }
+    '/campaign/manage-kv': {
+      id: '/campaign/manage-kv'
+      path: '/manage-kv'
+      fullPath: '/campaign/manage-kv'
+      preLoaderRoute: typeof CampaignManageKvRouteImport
+      parentRoute: typeof CampaignRoute
+    }
+    '/campaign/kv-wording': {
+      id: '/campaign/kv-wording'
+      path: '/kv-wording'
+      fullPath: '/campaign/kv-wording'
+      preLoaderRoute: typeof CampaignKvWordingRouteImport
+      parentRoute: typeof CampaignRoute
+    }
     '/api/$': {
       id: '/api/$'
       path: '/api/$'
@@ -581,10 +619,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface CampaignRouteChildren {
+  CampaignKvWordingRoute: typeof CampaignKvWordingRoute
+  CampaignManageKvRoute: typeof CampaignManageKvRoute
   CampaignIndexRoute: typeof CampaignIndexRoute
 }
 
 const CampaignRouteChildren: CampaignRouteChildren = {
+  CampaignKvWordingRoute: CampaignKvWordingRoute,
+  CampaignManageKvRoute: CampaignManageKvRoute,
   CampaignIndexRoute: CampaignIndexRoute,
 }
 

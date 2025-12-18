@@ -1,4 +1,5 @@
-import type { DefaultSession } from "@auth/core"
+import type { DefaultJWT } from '@auth/core/jwt'
+import type { DefaultUser, DefaultSession } from '@auth/core/types'
 
 declare module "@auth/core/types" {
     /**
@@ -18,8 +19,8 @@ declare module "@auth/core/types" {
     }
 }
 
-declare module "@auth/core/types" {
-    interface JWT {
+declare module "@auth/core/jwt" {
+    interface JWT extends DefaultJWT {
         username?: string
     }
 }

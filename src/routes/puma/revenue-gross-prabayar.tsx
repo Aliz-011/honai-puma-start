@@ -54,7 +54,7 @@ function RouteComponent() {
     const daysBehind = differenceInDays(new Date(), parseISO(defaultDate))
 
     const { data, refetch, isFetching, error, isError } = useQuery({
-        queryKey: ['revenue-gross', date, branch, subbranch, cluster, kabupaten],
+        queryKey: ['revenue-gross-prabayar', date, branch, subbranch, cluster, kabupaten],
         queryFn: async ({ queryKey }) => {
             const [_key, dateKey, branchKey, subbranchKey, clusterKey, kabupatenKey] = queryKey
 
