@@ -22,7 +22,10 @@ const config = defineConfig({
   ],
   ssr: {
     noExternal: ['ldapts']
-  }
+  },
+  // define: {
+  //   'process.env.NODE_ENV': JSON.stringify('production')
+  // }
 })
 
 export default config

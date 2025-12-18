@@ -4,16 +4,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from "@/components/ui/button"
 import { CopyIcon, DownloadIcon, ChevronLeft, ChevronRight } from "lucide-react"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationLink,
-    PaginationNext,
-    PaginationPrevious,
-} from "@/components/ui/pagination"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
 export const Route = createFileRoute('/campaign/kv-wording')({
     component: KVWordingPage,
@@ -52,6 +43,17 @@ function KVWordingPage() {
         placeholderData: (previousData) => previousData // Keep prev data while fetching new
     })
 
+    const getImageUrl = (path: string) => {
+        if (!path) return '';
+        if (path.startsWith('http')) return path;
+
+        // Clean up path if it contains "uploads/" already from legacy data
+        const filename = path.replace('/uploads/', '').replace('uploads/', '');
+
+        // Point to the Hono Route defined in kv-wording.ts
+        return `/api/campaign/kv/uploads/${filename}`;
+    }
+
     const handleCopy = (text: string, type: string) => {
         navigator.clipboard.writeText(text)
         toast.success(`${type} wording copied to clipboard`)
@@ -59,13 +61,17 @@ function KVWordingPage() {
 
     const handleDownload = async (item: KVItem) => {
         try {
-            const response = await fetch(item.imagePath);
+            const imageUrl = getImageUrl(item.imagePath);
+            const response = await fetch(imageUrl);
+            if (!response.ok) throw new Error("Image not found");
+
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            const filename = item.imagePath.split('/').pop() || `campaign-${item.id}.png`;
-            link.download = filename;
+            // Ensure nice filename
+            const cleanName = item.imagePath.replace('/uploads/', '');
+            link.download = cleanName || `campaign-${item.id}.png`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -92,24 +98,26 @@ function KVWordingPage() {
                     No campaign materials found.
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {items.map((item) => (
                         <Card key={item.id} className="overflow-hidden flex flex-col">
                             {/* Instagram-style Header */}
-                            <div className="p-3 flex items-center gap-2 border-b">
-                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                                    HP
-                                </div>
-                                <span className="font-semibold text-sm">{item.title}</span>
-                            </div>
+                            <CardHeader className="px-3 flex items-center gap-2 border-b">
+                                <CardTitle className="font-semibold text-sm">{item.title}</CardTitle>
+                            </CardHeader>
 
                             {/* Image Area */}
                             <div className="aspect-square relative bg-muted">
                                 <img
-                                    src={item.imagePath}
+                                    src={getImageUrl(item.imagePath)}
                                     alt={item.title}
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                                     loading="lazy"
+                                    onError={(e) => {
+                                        // Fallback if image fails to load
+                                        e.currentTarget.style.display = 'none';
+                                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                    }}
                                 />
                             </div>
 
